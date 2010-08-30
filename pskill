@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+# USAGE:  ps wwaux | grep badprocess | killps
+# Like awk '{print $2}' | xargs kill, except somewhat smarter
+
+class Array
+  def map_if(&b)
+    map(&b).select{|x| x}
+  end
+end
+
+procs = STDIN.readlines.map_if{|l| l !~ /grep/ && l.split[1]}
+if procs.empty?
+  puts "no processes"
+  exit
+end
+
+# puts "killing #{procs.join(" ")}"
+cmd = "kill #{ARGV} #{procs.join(" ")}"
+puts cmd
+system cmd
+
+=begin
+
+#!/bin/bash
+procs=$(grep -v grep | awk '{print $2}' | perl -pe 's/\n/ /g')
+if [ "$procs" == "" ]; then
+  echo "no processes"
+  exit
+fi
+echo "killing $procs"
+echo $procs | xargs kill "$@"
+
+=end

@@ -1,0 +1,8 @@
+#!/usr/bin/env perl
+
+while(<>) {
+  s/&lt;/</g;
+  s/&gt;/>/g;
+  s/&amp;/&/g;
+  print $_;
+}

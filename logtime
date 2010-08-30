@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+# anyall.org/logtime
+# prepend output lines with timestamps.  nice for long-running processes and
+# their monitors so when you check something a day later you have some idea
+# when things went right or wrong
+# brendan o'connor - anyall.org
+
+STDOUT.sync=true
+STDIN.sync=true
+
+STDIN.each do |line|
+  puts "#{Time.now.strftime("%Y-%m-%dT%H:%M:%S")}\t#{line}"
+end

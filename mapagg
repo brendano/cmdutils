@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+
+# map and aggregate for shell pipelines
+
+# Two args: mapper, then agger
+#   mapper is evaluated within each line
+#   agger is evaluated within an array holding all mapper results
+#
+# do a sum
+#   cat numbers | mapagg to_i 'inject(0){|s,x| s+x}'
+# find max value in column
+#   cat tsv | mapagg 'split("\t")[0].to_i'  sort[0]
+
+raise "exactly two args: mapper, then the agger.  (or leave out agger)" unless ARGV.size >= 1
+
+# for crazy nonsense like dotfiles.org/~brendano/.irbrc
+if File.exists?("#{ENV['HOME']}/.irbrc")
+  $irbrc_extensions_only = true
+  load "~/.irbrc"
+end
+
+cmd = ARGV[0]
+mapped = STDIN.map do |line|
+  line.chomp.instance_eval { eval cmd }
+end
+
+STDOUT.sync = true
+
+cmd = ARGV[1] || "self"
+result = mapped.instance_eval { eval cmd }
+puts result
