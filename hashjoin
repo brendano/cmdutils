@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+"""Simple straightforward join command for tab-sep files
+Uses hash indexing internally so no need for pre-sorting. So
+ * Everything must fit into memory
+ * Output order is arbitrary (python hash order)
+Hopefully this easier to use than unix join
+E.g. running it raw is just an intersection
+"""
+
+import sys,optparse
+from collections import defaultdict
+
+def unique_everseen(iterable, key=None):
+    "List unique elements, preserving order. Remember all elements ever seen."
+    #http://docs.python.org/library/itertools.html
+    # unique_everseen('AAAABBBCCDAABBB') --> A B C D
+    # unique_everseen('ABBCcAD', str.lower) --> A B C D
+    seen = set()
+    seen_add = seen.add
+    if key is None:
+        for element in iterable:
+            if element not in seen:
+                seen_add(element)
+                yield element
+    else:
+        for element in iterable:
+            k = key(element)
+            if k not in seen:
+                seen_add(k)
+                yield element
+
+p = optparse.OptionParser()
+p.add_option('-1', type='int', dest='f1', default=1)
+p.add_option('-2', type='int', dest='f2', default=1)
+opts,args=p.parse_args()
+opts.f1 -= 1
+opts.f2 -= 1
+
+
+assert len(args)==2
+file1,file2 = args
+file1 = sys.stdin if file1=='-' else open(file1)
+file2 = sys.stdin if file2=='-' else open(file2)
+assert file1 != file2
+
+# Build in-memory indexes of everything
+def build_index(file, key_index):
+  index,keys = defaultdict(list), []
+  for line in file:
+    parts = line[:-1].split("\t")
+    key = parts[key_index]
+    #assert key not in index, "unique keys please"
+    keys.append(key)
+    index[key].append(parts)
+  return index,keys
+
+index1,keys1 = build_index(file1, opts.f1)
+index2,keys2 = build_index(file2, opts.f2)
+
+def make_record(rec1, rec2):
+  rec2 = [x for i,x in enumerate(rec2) if i != opts.f2]
+  return rec1 + rec2
+
+def crossprod(xs,ys):
+  return ((x,y) for x in xs for y in ys)
+
+# Inner join
+main_keys = unique_everseen(keys1)
+restriction_keys = set(keys2)
+
+for key in main_keys:
+  if key not in restriction_keys: continue
+  for rec1,rec2 in crossprod(index1[key], index2[key]):
+    rec = make_record(rec1,rec2)
+    sys.stdout.write("\t".join(rec))
+    sys.stdout.write("\n")
+
