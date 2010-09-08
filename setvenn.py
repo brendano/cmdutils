@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """setvenn  <set1> <set2>
 Venn diagram overview of two files as sets.  
-Interesting counts and Jaccard ratio.(- venn diagram overview: counts for the above 
--s : force showing items in the set differences.
+Show interesting counts and Jaccard ratio.
+-s : Show items of the set differences.
 
 We don't newline chomp, so a bug if your file doesnt end with a newline 
 Dash - for stdin (e.g. cut/awk/sed/grep)
