@@ -1,22 +1,20 @@
 #!/usr/bin/env python
 """hashjoin  [options]  LeftFile RightFile
-For each row in LeftFile,
-output joined rows with all matching records in RightFile.
 
 Implemented via hash indexing so
- * No need for pre-sorting, but
- * Everything must fit into memory
+ * No need for pre-sorting
+ * but: Everything must fit into memory
 
-If you run it on two (unique element) lists, you get a set intersection.
+If you run it on two lists, you get a set intersection.
 
 Hopefully this easier to use than unix join.  You don't get weird deceptive
 results when the data isn't sorted the way 'join' expects.
-
-TODO only one file needs to be loaded into memory.  Should pick the smaller
-one.  Would be very useful for scanning a file for a small set of records (you
-can do this with a grep disjunction, but is a pain for, say, a thousand
-records).
 """
+
+#TODO only one file needs to be loaded into memory.  Should pick the smaller
+#one.  Would be very useful for scanning a file for a small set of records (you
+#can do this with a grep disjunction, but is a pain for, say, a thousand
+#records).
 
 import sys,optparse
 from collections import defaultdict
@@ -40,13 +38,16 @@ def unique_everseen(iterable, key=None):
                 seen_add(k)
                 yield element
 
-p = optparse.OptionParser(usage=__doc__)
-p.add_option('-1', type='int', dest='f1', default=1)
-p.add_option('-2', type='int', dest='f2', default=1)
-opts,args=p.parse_args()
-opts.f1 -= 1
+p = optparse.OptionParser(usage=__doc__.strip())
+p.add_option('-1', type='int', dest='f1', default=1, help="Join key in LeftFile (1-indexed), default 1")
+p.add_option('-2', type='int', dest='f2', default=1, help="John key in RightFile (1-indexed), default 1")
+p.add_option('--inner', action='store_const', const='inner', dest='join_mode', help="Do inner join (default)")
+p.add_option('-l','--left', action='store_const', const='left', dest='join_mode', help="Do left join")
+p.add_option('-d','--delim', type='string', default='\t', help="Delimiter, default tab")
+opts,args = p.parse_args()
+opts.join_mode = opts.join_mode or 'inner'
+opts.f1 -= 1  # 0-indexing
 opts.f2 -= 1
-
 
 if len(args) != 2:
   p.print_help()
@@ -58,34 +59,39 @@ assert file1 != file2
 
 # Build in-memory indexes of everything
 def build_index(file, key_index):
-  index,keys = defaultdict(list), []
+  index,keys,records = defaultdict(list), [], []
   for line in file:
-    parts = line[:-1].split("\t")
+    parts = line[:-1].split(opts.delim)
     key = parts[key_index]
     #assert key not in index, "unique keys please"
     keys.append(key)
     index[key].append(parts)
-  return index,keys
+    records.append(parts)
+  return index,keys,records
 
-index1,keys1 = build_index(file1, opts.f1)
-index2,keys2 = build_index(file2, opts.f2)
+index1,keys1,records1 = build_index(file1, opts.f1)
+index2,keys2,records2 = build_index(file2, opts.f2)
+
+if opts.join_mode=='left':
+  for key1 in keys1:
+    if key1 not in index2:
+      index2[key1].append(None)
+
+width2 = len(records2[0])
 
 def make_record(rec1, rec2):
-  rec2 = [x for i,x in enumerate(rec2) if i != opts.f2]
+  if rec2 is None:
+    rec2 = ['NA'] * (width2 - 1)
+  else:
+    rec2 = [x for i,x in enumerate(rec2) if i != opts.f2]
   return rec1 + rec2
 
-def crossprod(xs,ys):
-  return ((x,y) for x in xs for y in ys)
+def make_and_output_record(rec1, rec2):
+  rec = make_record(rec1,rec2)
+  sys.stdout.write(opts.delim.join(rec))
+  sys.stdout.write("\n")
 
-# Inner join
-#main_keys = unique_everseen(keys1)  # do we really need this?
-main_keys = keys1
-restriction_keys = set(keys2)
-
-for key in main_keys:
-  if key not in restriction_keys: continue
-  for rec1,rec2 in crossprod(index1[key], index2[key]):
-    rec = make_record(rec1,rec2)
-    sys.stdout.write("\t".join(rec))
-    sys.stdout.write("\n")
+for key1,rec1 in zip(keys1,records1):
+  for rec2 in index2[key1]:
+    make_and_output_record(rec1, rec2)
 
