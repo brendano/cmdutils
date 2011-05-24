@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+
+# humanizes numbers (going to whichever k/M/G/T unit is appropriate)
+# in the spirit of "du -h" or "ls -lh", but in arbitrary text.
+# for example, output of "wc" or "hadoop dfs -ls"
+
+for line in ARGF
+  s = line.gsub(/(\b|^)([0-9\.]+)(?=\s|$)/){ 
+    lhs = $1
+    strnum = $2
+    rhs = $3
+    if strnum.size < 5
+      next "#{lhs}#{strnum}#{rhs}"
+    end
+
+    n = strnum.to_f
+    fmt = if n < 1e3
+        n
+      elsif n < 1e6
+        "%.2f K" % [n/1e3]
+      elsif n < 1e9
+        "%.2f M" % [n/1e6]
+      elsif n < 1e12
+        "%.2f G" % [n/1e9]
+      else
+        "%.2f T" % [n/1e12]
+      end
+    total_size = lhs.size + strnum.size
+    if fmt.size < total_size
+      fmt = "%#{total_size}s" % [fmt]
+    end
+    "#{fmt}#{rhs}"
+  }
+  puts s
+end
+
+
