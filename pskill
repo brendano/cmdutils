@@ -15,7 +15,7 @@ if procs.empty?
 end
 
 # puts "killing #{procs.join(" ")}"
-cmd = "kill #{ARGV} #{procs.join(" ")}"
+cmd = "kill #{ARGV.join(" ")} #{procs.join(" ")}"
 puts cmd
 system cmd
 
