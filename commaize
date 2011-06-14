@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+# humanizes numbers (going to whichever k/M/G/T unit is appropriate)
+# in arbitrary text.  for example, "hadoop dfs -ls".
+
+def commify(n)
+    # http://codesnippets.joyent.com/posts/show/330
+    n.to_s =~ /([^\.]*)(\..*)?/
+    int, dec = $1.reverse, $2 ? $2 : ""
+    while int.gsub!(/(,|\.|^)(\d{3})(\d)/, '\1\2,\3')
+    end
+    int.reverse + dec
+end
+
+for line in STDIN
+  s = line.gsub(/([0-9\.]+)/){ 
+    # lhs = $1
+    # strnum = $2
+    # rhs = $3
+    # lhs + commify(strnum) + rhs
+    strnum = $1
+    commify(strnum)
+  }
+  puts s
+end
+
+
