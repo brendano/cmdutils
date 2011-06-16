@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# humanizes numbers (going to whichever k/M/G/T unit is appropriate)
+# comma-ifies numbers
 # in arbitrary text.  for example, "hadoop dfs -ls".
 
 def commify(n)
