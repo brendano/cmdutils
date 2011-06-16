@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# USAGE:  ps wwaux | grep badprocess | killps
+# USAGE:  ps wwaux | grep badprocess | pskill
 # Like awk '{print $2}' | xargs kill, except somewhat smarter
 
 class Array
