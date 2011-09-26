@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+"""
+dateseq StartDate [EndDate]
+
+Prints sequence of YYYY-MM-DD dates over the specified range.
+Inclusive of both StartDate and EndDate.
+Dates can be underspecified.  Any of these are fine:
+  YYYY-MM-DD
+  YYYY-MM
+  YYYY
+Underspecified StartDate uses the left-most day of the range.
+Underspecified EndDate uses the right-most day of the range.
+If EndDate is missing, use StartDate.  This only makes sense for underspecified
+datetimes (I think), you get the sequence over that year or month.
+"""
+
+import sys, re
+from datetime import datetime, timedelta
+
+if len(sys.argv) < 2:
+  print __doc__.strip()
+  sys.exit(1)
+
+date1 = sys.argv[1]
+date2 = sys.argv[2] if len(sys.argv) >= 3 else date1
+
+def parse_datetime(s, mode):
+  if re.search(r'^\d\d\d\d-\d\d-\d\d$', s):
+    return datetime.strptime('%Y-%m-%d', s)
+  elif re.search(r'^\d\d\d\d-\d\d$', s):
+    y,m = s.split('-')
+    y = int(y)
+    m = int(m)
+    if mode=='LEFT':
+      return datetime(y,m,1)
+    elif mode=='RIGHT':
+      m = m+1 if m < 12 else 1
+      return datetime(y,m,1) - timedelta(days=1)
+    else: assert False, "bad mode"
+  elif re.search(r'^\d\d\d\d$', s):
+    y = int(s)
+    if mode=='LEFT':
+      return datetime(y,1,1)
+    elif mode=='RIGHT':
+      return datetime(y+1,1,1) - timedelta(days=1)
+
+  else: assert False, "couldn't parse %s" % repr(s)
+
+
+date1 = parse_datetime(date1, 'LEFT')
+date2 = parse_datetime(date2, 'RIGHT')
+
+print>>sys.stderr, date1, date2
+
+assert date1 <= date2
+
+d = date1
+while d <= date2:
+  print d.strftime('%Y-%m-%d')
+  d = d + timedelta(days=1)
+
