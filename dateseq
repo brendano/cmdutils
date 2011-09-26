@@ -3,6 +3,7 @@
 dateseq StartDate [EndDate]
 
 Prints sequence of YYYY-MM-DD dates over the specified range.
+(Like `seq' or `gseq' but for dates.)
 Inclusive of both StartDate and EndDate.
 Dates can be underspecified.  Any of these are fine:
   YYYY-MM-DD
@@ -26,7 +27,7 @@ date2 = sys.argv[2] if len(sys.argv) >= 3 else date1
 
 def parse_datetime(s, mode):
   if re.search(r'^\d\d\d\d-\d\d-\d\d$', s):
-    return datetime.strptime('%Y-%m-%d', s)
+    return datetime.strptime(s,'%Y-%m-%d')
   elif re.search(r'^\d\d\d\d-\d\d$', s):
     y,m = s.split('-')
     y = int(y)
