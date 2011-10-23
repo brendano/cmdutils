@@ -9,6 +9,8 @@ Dates can be underspecified.  Any of these are fine:
   YYYY-MM-DD
   YYYY-MM
   YYYY
+  YYYYMMDD
+  YYYYMM
 Underspecified StartDate uses the left-most day of the range.
 Underspecified EndDate uses the right-most day of the range.
 If EndDate is missing, use StartDate.  This only makes sense for underspecified
@@ -28,6 +30,12 @@ date2 = sys.argv[2] if len(sys.argv) >= 3 else date1
 def parse_datetime(s, mode):
   if re.search(r'^\d\d\d\d-\d\d-\d\d$', s):
     return datetime.strptime(s,'%Y-%m-%d')
+  elif re.search('^\d{8}$', s):
+    # YYYYMMDD
+    return parse_datetime('%s-%s-%s' % (s[:4], s[4:6], s[6:8]), mode)
+  elif re.search('^\d{6}$', s):
+    # YYYYMM
+    return parse_datetime('%s-%s' % (s[:4], s[4:6]), mode)
   elif re.search(r'^\d\d\d\d-\d\d$', s):
     y,m = s.split('-')
     y = int(y)
@@ -51,7 +59,7 @@ def parse_datetime(s, mode):
 date1 = parse_datetime(date1, 'LEFT')
 date2 = parse_datetime(date2, 'RIGHT')
 
-print>>sys.stderr, date1, date2
+#print>>sys.stderr, date1, date2
 
 assert date1 <= date2
 

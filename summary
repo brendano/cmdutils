@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+
+"""
+Summary statistics for a list of numbers or strings (on stdin).
+  * Number, number of types
+  * Type counts -- if small number of types
+    -c:  force showing counts
+  * Quantiles -- even for strings
+  * Mean,SD -- only for numbers
+
+Loosely inspired by R's summary(): call on anything, learn something.
+"""
+
+import os,sys
+from collections import defaultdict
+
+if '-h' in sys.argv:
+  print __doc__.strip()
+  sys.exit(1)
+
+def writeln(s):
+  sys.stdout.write(s)
+  sys.stdout.write("\n")
+def write(s):
+  sys.stdout.write(s)
+
+def mean(xs):
+  return sum(xs)*1.0 / len(xs)
+def sd(xs, m):
+  ss = sum( (x-m)**2 for x in xs )
+  return ss*1.0 / len(xs)
+
+all_float = True
+all_int = True
+
+# should use heapq instead of the sort?
+items = []
+counts = defaultdict(int)
+
+for line in sys.stdin:
+  x = line[:-1]
+  if all_float:
+    try:
+      x = float(x)
+      if int(x) != x:
+        all_int = False
+      else:
+        x = int(x)
+    except ValueError: 
+      all_float = False
+      all_int = False
+  items.append(x)
+  counts[x] += 1
+
+items.sort()
+N = len(items)
+
+print "N = %d" % N,
+print "\t\t",
+num_dups = len(items) - len(counts)
+if num_dups==0:
+  print "No duplicates"
+elif num_dups == len(items):
+  print "All duplicates"
+else:
+  print "%d unique values" % (len(counts))
+
+if N <= 3:
+  for x in items: writeln(x)
+
+if (len(counts) <= 10 and num_dups > 0) or '-c' in sys.argv:
+  s = ' '.join(['%s:%d' % (w,counts[w]) for w in sorted(counts)])
+  print 'Counts\t[' + s + ']'
+
+_min = items[0]
+_max = items[-1]
+
+def safe(x):
+  x = int(x)
+  if x==N:
+    x -= 1
+  return x
+
+_50 = items[ safe(.5 * N) ]
+
+_05 = items[ safe(.05 * N) ]
+_95 = items[ safe(.95 * N) ]
+
+if True:
+  writeln("Min   :  %s" % _min)
+#if N >= 20: writeln("  5%%ile:  %s" % items[safe(.05*N)])
+if N >= 5:
+  writeln("    25:  %s" % items[safe(.25*N)])
+if True:
+  write("Median:  %s" % _50)
+  if all_float or all_int:
+    m = mean(items)
+    write("\tMean: %.3g" % m)
+    write("\tSD: %.3g" % sd(items, m))
+  write("\n")
+if N >= 5:
+  writeln("    75:  %s" % items[safe(.75*N)])
+#if N >= 20: writeln(" 95%%ile:  %s" % items[safe(.95*N)])
+if True:
+  writeln("Max   :  %s" % _max)
