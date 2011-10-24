@@ -11,7 +11,8 @@ Summary statistics for a list of numbers or strings (on stdin).
 Loosely inspired by R's summary(): call on anything, learn something.
 """
 
-import os,sys
+from __future__ import division
+import os,sys,math
 from collections import defaultdict
 
 if '-h' in sys.argv:
@@ -28,7 +29,7 @@ def mean(xs):
   return sum(xs)*1.0 / len(xs)
 def sd(xs, m):
   ss = sum( (x-m)**2 for x in xs )
-  return ss*1.0 / len(xs)
+  return math.sqrt(ss / len(xs))
 
 all_float = True
 all_int = True
