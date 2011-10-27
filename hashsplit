@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+# Put input records into bucketed files, by their hash
+import sys, hashlib, struct, os
+from optparse import OptionParser
+parser = OptionParser()
+parser.add_option('-a', '--append', action='store_true', help="Append, don't overwrite files")
+parser.add_option('-n', '--num-buckets', default=1000, help="Number of buckets")
+parser.add_option('-f', '--field', default=1, help="Which field to use as split key (1-indexed)")
+opts,args = parser.parse_args()
+print opts
+
+N = int(opts.num_buckets); assert N > 0
+field = int(opts.field); assert field >= 1
+field -= 1
+if len(args) < 1:
+  print "Need output prefix"
+  sys.exit(1)
+prefix = args[0]
+
+os.system("mkdir -p %s" % prefix)
+outputs = ["%s/%d" % (prefix, i) for i in range(N)]
+mode = 'a' if opts.append else 'w'
+outputs = [open(f,mode, int(50e3)) for f in outputs]
+
+for line in sys.stdin:
+  line = line[:-1]
+  key = line.split('\t')[field]
+  bucket = struct.unpack('I', hashlib.md5(key).digest()[:4])[0] % N
+  print>>outputs[bucket], line
