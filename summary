@@ -96,8 +96,8 @@ if True:
   write("Median:  %s" % _50)
   if all_float or all_int:
     m = mean(items)
-    write("\tMean: %.3g" % m)
-    write("\tSD: %.3g" % sd(items, m))
+    write(" \tMean: %.4g" % m)
+    write(" \tSD: %.4g" % sd(items, m))
   write("\n")
 if N >= 5:
   writeln("    75:  %s" % items[safe(.75*N)])
