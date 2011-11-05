@@ -17,12 +17,30 @@ If EndDate is missing, use StartDate.  This only makes sense for underspecified
 datetimes (I think), you get the sequence over that year or month.
 """
 
+
 import sys, re
 from datetime import datetime, timedelta
 
 if len(sys.argv) < 2:
   print __doc__.strip()
   sys.exit(1)
+
+tests = """
+dateseq 2009
+dateseq 200911 200912
+dateseq 2009-01 2009-02
+dateseq 2009-01-05 2009-01-05
+dateseq 2009-01
+dateseq 2008-12 2009-01
+"""
+
+if '--test' in sys.argv:
+  import os
+  lines = tests.strip().split("\n")
+  for cmd in lines:
+    print "\n***", cmd
+    os.system(cmd + " | summary")
+  sys.exit()
 
 date1 = sys.argv[1]
 date2 = sys.argv[2] if len(sys.argv) >= 3 else date1
@@ -43,7 +61,7 @@ def parse_datetime(s, mode):
     if mode=='LEFT':
       return datetime(y,m,1)
     elif mode=='RIGHT':
-      m = m+1 if m < 12 else 1
+      y,m = (y,m+1) if m<12 else (y+1,1)
       return datetime(y,m,1) - timedelta(days=1)
     else: assert False, "bad mode"
   elif re.search(r'^\d\d\d\d$', s):
@@ -67,4 +85,5 @@ d = date1
 while d <= date2:
   print d.strftime('%Y-%m-%d')
   d = d + timedelta(days=1)
+
 
