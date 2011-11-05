@@ -23,17 +23,18 @@ file1 = sys.stdin if file1=='-' else open(file1)
 file2 = sys.stdin if file2=='-' else open(file2)
 if file1==file2==sys.stdin: raise Exception("can't both be stdin")
 a,b = set(file1), set(file2)
-cmdname = sys.argv[0].split("/")[-1].replace(".py","")
 _and = a & b
 _or  = a | b
 w = len(str(len(_or)))
 w = max(w, 5)
 print "  |A| = %*d   |A&B| = %*d     |B| = %*d" % (w,len(a), w,len(_and), w,len(b))
 print "|A-B| = %*d   |AvB| = %*d   |B-A| = %*d" % (w,len(a-b), w,len(_or), w,len(b-a))
-print "   AB/A %-*.3f    Jacc = %-*.3f      AB/B %-*.3f" % (w,len(_and)/len(a), w,len(_and)/len(_or), w, len(_and)/len(b))
+print "   AB/A %-*.3f    Jacc = %-*.3f      AB/B %-*.3f" % (
+    w,len(_and)/len(a) if len(a) else float('nan'),
+    w,len(_and)/len(_or) if len(_or) else float('nan'),
+    w,len(_and)/len(b) if len(b) else float('nan'))
 if show_items:
   print "\n***  |A-B| = %*d  ***" % (w,len(a-b),)
   for x in (a-b): print x,
   print "\n***  |B-A| = %*d  ***" % (w,len(b-a),)
   for x in (b-a): print x,
-sys.exit()
