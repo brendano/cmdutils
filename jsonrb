@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+# Process one-json-per-line, in a "ruby -ne" inspired way.
+# Your supplied code is executed one per line, on the JSON object for that line.
+# The JSON object is accessed as 'self', or else implicitly (via instance_eval).
+# We also overload hash method lookup to be key lookup, for convenience.
+# The idea is for processing and filtering sorts of use cases
+# where, for plaintext, you would use "awk", "cut", "ruby -ne", etc.
+#
+# Example usages:
+#
+# cat review.json | jsonrb 'puts $_ if votes.funny >= 10'
+# cat review.json | jsonrb 'puts "#{votes.to_json}\t#{text.split[0...10].join(" ")}"'
+# cat business.json | jsonrb 'puts city'
+
+# Rationale:
+# because https://github.com/micha/jsawk/ doesn't know one-json-per-line
+# nor http://jgrep.org
+
+require 'rubygems'
+require 'json'
+
+code = ARGV.join(" ")
+
+class Hash
+  def method_missing(meth, *args)
+    self[meth.to_s]
+  end
+end
+
+STDIN.each do |line|
+  $_ = line
+  d = JSON.parse(line)
+  d.instance_eval do
+    eval code
+  end
+end
+
+
