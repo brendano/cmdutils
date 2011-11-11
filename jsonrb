@@ -11,6 +11,7 @@
 # cat review.json | jsonrb 'puts $_ if votes.funny >= 10'
 # cat review.json | jsonrb 'puts "#{votes.to_json}\t#{text.split[0...10].join(" ")}"'
 # cat business.json | jsonrb 'puts city'
+# cat business.json | jsonrb 'puts self["type"]'  ## method_missing doesn't work
 
 # Rationale:
 # because https://github.com/micha/jsawk/ doesn't know one-json-per-line
@@ -28,7 +29,7 @@ class Hash
 end
 
 STDIN.each do |line|
-  $_ = line
+  $_ = line.chomp
   d = JSON.parse(line)
   d.instance_eval do
     eval code
