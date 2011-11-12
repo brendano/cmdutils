@@ -5,17 +5,22 @@
 # We also overload hash method lookup to be key lookup, for convenience.
 # The idea is for processing and filtering sorts of use cases
 # where, for plaintext, you would use "awk", "cut", "ruby -ne", etc.
-#
-# Example usages:
-#
+
+## Basic usage:
 # cat review.json | jsonrb 'puts $_ if votes.funny >= 10'
 # cat review.json | jsonrb 'puts "#{votes.to_json}\t#{text.split[0...10].join(" ")}"'
 # cat business.json | jsonrb 'puts city'
 # cat business.json | jsonrb 'puts self["type"]'  ## method_missing doesn't work
 
-# Rationale:
+## Special case for tab-separated inputs: each line is a list.
+# paste f1.json f2.json | jsonrb 'puts self[0].a if self[1].n >= 5'
+
+## Tab-separated output:
+# cat user.json | jsonrb 'puts tabrow(review_count, average_stars)'
+
+## Rationale:
 # because https://github.com/micha/jsawk/ doesn't know one-json-per-line
-# nor http://jgrep.org
+# nor http://jgrep.org nor jsonpipe nor one or two others I found
 
 require 'rubygems'
 require 'json'
@@ -28,12 +33,18 @@ class Hash
   end
 end
 
+def tabrow(*args)
+  args.map{|x| x.to_s}.join("\t")
+end
+
 STDIN.each do |line|
   $_ = line.chomp
-  d = JSON.parse(line)
-  d.instance_eval do
-    eval code
+  if $_ =~ /\t/
+    d = $_.split("\t").map{|s| begin JSON.parse(s); rescue JSON::ParserError; s; end }
+  else
+    d = JSON.parse(line)
   end
+  d.instance_eval { eval code }
 end
 
 
