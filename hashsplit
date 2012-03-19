@@ -5,12 +5,12 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.add_option('-a', '--append', action='store_true', help="Append, don't overwrite files")
 parser.add_option('-n', '--num-buckets', default=1000, help="Number of buckets")
-parser.add_option('-f', '--field', default=1, help="Which field to use as split key (1-indexed)")
+parser.add_option('-f', '--field', default=1, help="Which field to use as split key (1-indexed). 0 = whole line")
 opts,args = parser.parse_args()
 print opts
 
 N = int(opts.num_buckets); assert N > 0
-field = int(opts.field); assert field >= 1
+field = int(opts.field); assert field >= 0
 field -= 1
 if len(args) < 1:
   print "Need output prefix"
@@ -24,6 +24,9 @@ outputs = [open(f,mode, int(50e3)) for f in outputs]
 
 for line in sys.stdin:
   line = line[:-1]
-  key = line.split('\t')[field]
+  if field > -1:
+    key = line.split('\t')[field]
+  else:
+    key = line
   bucket = struct.unpack('I', hashlib.md5(key).digest()[:4])[0] % N
   print>>outputs[bucket], line
