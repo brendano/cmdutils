@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+"""Usage:
+doc_filter  DocIDFilterList DocBigList
+
+Filter DocBigList by DocIDFilterList.  I.e.,
+Iterate through DocBigList, and print a line only if its DocID is in the
+FilterList.
+DocBigList may be '-', meaning stdin.
+
+This actually is equivalent to 'hashjoin' inner join *if* both files have
+unique keys (as hopefully is always the case in doc list files).... HOWEVER,
+this script does NOT need to load the DocBigList all in at once.  Yay.
+"""
+
+import sys
+
+if len(sys.argv)<3:
+  print __doc__.strip()
+  sys.exit(-1)
+
+filter_file = sys.argv[1]
+filter_file = sys.stdin if filter_file=='-' else open(filter_file)
+big_file = sys.argv[2]
+big_file = sys.stdin if big_file=='-' else open(big_file)
+
+filter = set( line.rstrip('\n').split('\t')[0] for line in filter_file )
+for line in big_file:
+  parts = line.split('\t')
+  docid = parts[0]
+  if docid in filter:
+    sys.stdout.write(line)

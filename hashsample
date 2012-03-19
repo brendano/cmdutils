@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+# Downsample records by md5 hash
+from __future__ import division
+import sys, hashlib, struct, os
+from optparse import OptionParser
+parser = OptionParser()
+parser.add_option('-r', '--rate', default=1.0/1000, help="sample rate (from 0 to 1)")
+parser.add_option('-f', '--field', default=1, help="Which field to use as split key (1-indexed). 0 = whole line")
+parser.add_option('-s', '--salt', default='', help="Salt for hashing - essentially a random seed")
+opts,args = parser.parse_args()
+#print>>sys.stderr, opts
+
+field = int(opts.field)
+assert field >= 0
+field -= 1
+
+rate = float(opts.rate)
+#print>>sys.stderr, "desired rate", rate
+assert 0 < rate <= 1, "rate %s out of range" % rate
+
+N = 2**32-1
+n = int(rate * N)
+assert n>0, "too finegrained a rate"
+#print>>sys.stderr, "using sample rate of %s" % (n/N)
+
+for line in sys.stdin:
+  line = line[:-1]
+  if field > -1:
+    key = line.split('\t')[field]
+  else:
+    key = line
+  if opts.salt:
+    key += '*=*-*' + opts.salt
+  randint = struct.unpack('I', hashlib.md5(key).digest()[:4])[0]
+  if randint <= n:
+    print line
