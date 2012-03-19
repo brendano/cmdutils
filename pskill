@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
-# USAGE:  ps wwaux | grep badprocess | pskill
-# Like awk '{print $2}' | xargs kill, except somewhat smarter
+# USAGE:  ps aux | grep badprocess | pskill
+# Like the standard
+#   awk '{print $2}' | xargs kill
+# ... except a little smarter
 
 class Array
   def map_if(&b)
