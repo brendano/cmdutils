@@ -95,11 +95,17 @@ for block in iter_blocks():
     p = newlines_seen/bytes_seen
     se = math.sqrt( p*(1-p)/bytes_seen )
 
-    rest = filesize - bytes_seen
-    numlines = 1 + newlines_seen + rest*p
-    lo = 1+newlines_seen + rest*(p-1.96*se)
-    lo = max(0, lo)
-    hi = 1+newlines_seen + rest*(p+1.96*se)
+    numlines = 1 + filesize*p
+    lo = 1 + filesize*(p-1.96*se)
+    hi = 1 + filesize*(p+1.96*se)
+
+    # Replacement adjustment isn't correct under with-replacement seek samples
+    #rest = filesize - bytes_seen
+    #numlines = 1 + newlines_seen + rest*p
+    #lo = 1+newlines_seen + rest*(p-1.96*se)
+    #lo = max(0, lo)
+    #hi = 1+newlines_seen + rest*(p+1.96*se)
+
     #print num_blocks, numlines, lo,hi
     if num_blocks < num_first_blocks: continue
 
