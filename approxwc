@@ -1,82 +1,124 @@
 #!/usr/bin/env python
+# vim: sts=4:sw=4
 """
 Approximate line-count of an extremely large file.
-Stops early if possible, if confidence is high.
-Has a #Lines relative error tolerance.  Quits if estimate satisfies it at 95% confidence.
+Quits after time limit,
+or stops early if possible (via error tolerance at 95% confidence).
+Default settings are to run fast; tweak them if you need more accuracy.
+
+Example:
+    % approxwc v6/0910.useragg.randorder.partial    
+    1,310,000 lines (1.0% max error, 16311 samples); 17,058,627,584 bytes
+
 """
 
-# Views the problem as an average bytes-per-line estimator.
-# Note for skewed distribution of line lengths (e.g. edgelists), mean estimation is hard.
-# e.g. if it really was powerlaw, infinite variance implies infinite standard error for mean estimator.
-# Should we use geometric means? but that seems wrong if goal is #lines estimate.
-# Is our approach optimal for L2 loss on #line estimate? What about for L1 loss (seems more sensible)?
+# Approach: estimate the bernoulli parameter of proportion of newlines in file.
 
-# Another issue is to think about it way differently as an estimation problem
-# of the proportion of \n's in the file.  This may make more sense.
+# Alternative approach is to view the problem as an average bytes-per-line estimator.
+# Note for skewed distribution of line lengths (e.g. edgelists), mean estimation is hard.
+# Then have to extrapolate to NumLines estimation bounds.
 
 from __future__ import division
-import math,sys,os
+import math,sys,os,random,time
+import argparse
 
-filename = sys.argv[1]
-filesize = os.stat(filename).st_size
+num_first_blocks = 10
+def block_positions():
+    global filesize, bufsize
+    if filesize <= num_first_blocks*bufsize:
+        yield 0,filesize
+        return
+    interval_size = (filesize-bufsize)/(num_first_blocks-1)
+    for b in range(num_first_blocks):
+        #print b*interval_size, bufsize
+        yield b*interval_size, bufsize
 
-scan_limit = int(5e9)  ## how many max bytes to scan, from file?
-est_err_thresh =  0.05  ## percent error tolerance, of estimate?  [at 95% confidence]
+    # would be better to do a recursive deterministic sampler
+    # e.g. 0,1,.5,.25,.75,.125,.375,.625,.875
+    # i forget how to implement though
+    for x in xrange(int(args.sample_limit) - num_first_blocks):
+        yield random.randrange(bufsize, filesize-2*bufsize), bufsize
+
+def iter_blocks():
+    global fp
+    for start,size in block_positions():
+        fp.seek(start)
+        yield fp.read(size)
 
 def print_estimate():
     #print "Num lines: {numlines:.1f} [{numlines_lo:.1f}, {numlines_hi:.1f}], Bytes per Line: {bpl_mean:.1f} (se {bpl_se:.1f})".format(**globals())
-    print "Num Lines: {numlines:,.0f} ({err_potential_pct:.1f}% max error), Bytes per Line: {bpl_mean:,.1f} (se {bpl_se:.1f})".format(err_potential_pct=err_potential*100, **globals())
+    #print "Num Lines: {numlines_sig:,.0f} ({err_potential_pct:.1f}% max error), Bytes per Line: {bpl_mean:,.1f} (sd {bpl_sd:.1f}, se {bpl_se:.1f})".format(numlines_sig=smart_round(numlines, args.tolerance), err_potential_pct=err_potential*100, **globals())
+    if args.wc:
+        print "{numlines:.1f}\tNA\t{filesize}\t{filename}".format(filename=args.filename, **globals())
+    else:
+        print "{numlines_sig:,.0f} lines ({err_potential_pct:.1f}% max error, {num_blocks} samples); {filesize:,} bytes".format(numlines_sig=smart_round(numlines, args.tolerance), err_potential_pct=err_potential*100, **globals())
+    #print "NUMLINES",numlines
 
-lines_seen = 0
+def intround(x):
+    return math.ceil(x) if x-math.floor(x) >= 0.5 else math.floor(x)
+
+def smart_round(n, tol):
+    """Tolerance is in relative error.
+        0.9% => 3 sigdig
+        1%   => 2 sigdig
+        2%   => 2 sigdig
+    """
+    sigdig = math.ceil(-math.log10(tol)) + 1
+    extra = math.ceil(math.log10(n)) - sigdig
+    if extra <= 0:
+        return n
+    else:
+        return intround(n / 10**extra) * 10**extra
+
+parser = argparse.ArgumentParser(description=__doc__.strip())
+parser.add_argument('filename')
+parser.add_argument('--time-limit', '-l', default=5, type=float, help="Limit in wall-clock seconds")
+parser.add_argument('--tolerance', '-t', default=0.01, type=float, help="Relative error tolerance")
+parser.add_argument('--blocksize', '-b', default=100e3, type=float, help="Block size in bytes")
+parser.add_argument('--sample-limit', default=100e3, type=float, help="Maximum number of samples")
+parser.add_argument('--wc', action='store_true', help="Output format similar to 'wc'")
+args = parser.parse_args()
+
+filesize = os.stat(args.filename).st_size
+bufsize = int(args.blocksize)
+fp = open(args.filename, 'r', bufsize)
+start_time = time.time()
+
 bytes_seen = 0
-bpl_ss = 0
-for line in open(filename):
-    lines_seen += 1
-    bytes_seen += len(line)
-    bpl_ss += len(line)**2
+newlines_seen = 0
+num_blocks = 0
+for block in iter_blocks():
+    num_blocks += 1
+    newlines_seen += block.count('\n')
+    bytes_seen += len(block)
 
-    # BPL estimator and standard error
-    bpl_mean = bytes_seen / lines_seen
-    bpl_sd   = math.sqrt((bpl_ss - bytes_seen) / lines_seen)
-    bpl_se = bpl_sd / math.sqrt(lines_seen)
-    bpl_lo, bpl_hi = bpl_mean-1.96*bpl_se, bpl_mean+1.96*bpl_se
-    if bpl_lo < 0: continue
+    p = newlines_seen/bytes_seen
+    se = math.sqrt( p*(1-p)/bytes_seen )
 
-    # Extrapolated interval
-    #numlines = filesize / bpl_mean
-    #numlines_lo, numlines_hi = filesize/bpl_hi, filesize/bpl_lo
-
-    # Alternative with replacement correction (thanks yucheng)
-    n = lines_seen
-    b = filesize-bytes_seen
-    numlines = n + b/bpl_mean
-    numlines_lo, numlines_hi = n + b/bpl_hi,  n + b/bpl_lo
-
-    #if lines_seen % 10000 == 0:
-        #print numlines,numlines2, '|', numlines_lo,numlines2_lo,'|',numlines_hi,numlines2_hi
-        #print bpl_ss, bytes_seen
-        #print "{:,} lines seen, {:,} bytes seen".format(lines_seen, bytes_seen)
-        #import json
-        #print json.dumps({k:v for k,v in globals().items() if isinstance(v, (int,float))})
-        #print_estimate()
-
-    if bytes_seen > scan_limit:
-        print "Stopping early"
-        break
+    rest = filesize - bytes_seen
+    numlines = 1 + newlines_seen + rest*p
+    lo = 1+newlines_seen + rest*(p-1.96*se)
+    lo = max(0, lo)
+    hi = 1+newlines_seen + rest*(p+1.96*se)
+    #print num_blocks, numlines, lo,hi
+    if num_blocks < num_first_blocks: continue
 
     # Relative error is calculated as size of interval relative to estimate.
-    # Justification...  We assume we're in the 95% case of the true #Lines
-    # being inside the interval.  Conditional on that, the worst-case is if the
+    # Justification:  Assume we're in the 95% case of the true NumLines being
+    # inside the interval.  Conditional on that, the worst-case is if the
     # estimate is on the very extreme of the interval, Then you want to bound
     # how far away is the other other very extreme end -- i.e. the size of the
     # interval.
 
-    err_potential = (numlines_hi-numlines_lo) / numlines
-    if bpl_lo>0 and err_potential < est_err_thresh:
-        print "Confidence satisfied"
+    err_potential = (hi-lo) / numlines
+    if err_potential < args.tolerance:
+        #print "Confidence satisfied ({} samples)".format(num_blocks)
+        break
+    if time.time() - start_time > args.time_limit:
         break
 else:
-    print "Scanned entire file.  Statistics are exact."
+    #print "Sample limit reached ({})".format(num_blocks)
+    pass
 
-#print "{:,} lines seen, {:,} bytes seen".format(lines_seen, bytes_seen)
 print_estimate()
+
