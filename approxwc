@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # vim: sts=4:sw=4
+
 """
-Approximate line-count of an extremely large file.
-Quits after time limit,
+Approximate line-count of an extremely large file.  Quits after time limit,
 or stops early if possible (via error tolerance at 95% confidence).
-Default settings are to run fast; tweak them if you need more accuracy.
+Default settings are to run fast; tweak if you need more accuracy.
 
 Example:
     % approxwc v6/0910.useragg.randorder.partial    
     1,310,000 lines (1.0% max error, 16311 samples); 17,058,627,584 bytes
-
 """
 
 # Approach: estimate the bernoulli parameter of proportion of newlines in file.
@@ -70,12 +69,12 @@ def smart_round(n, tol):
     else:
         return intround(n / 10**extra) * 10**extra
 
-parser = argparse.ArgumentParser(description=__doc__.strip())
+parser = argparse.ArgumentParser(description=__doc__.strip(), formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument('filename')
-parser.add_argument('--time-limit', '-l', default=5, type=float, help="Limit in wall-clock seconds")
-parser.add_argument('--tolerance', '-t', default=0.01, type=float, help="Relative error tolerance")
-parser.add_argument('--blocksize', '-b', default=100e3, type=float, help="Block size in bytes")
-parser.add_argument('--sample-limit', default=100e3, type=float, help="Maximum number of samples")
+parser.add_argument('--time-limit', '-l', default=5, type=float, help="Limit wall-clock time, in seconds (default: 5)")
+parser.add_argument('--tolerance', '-t', default=0.01, type=float, help="Relative error tolerance (default: .01)")
+parser.add_argument('--blocksize', '-b', default=100e3, type=float, help="Block size in bytes (default: 100e3)")
+parser.add_argument('--sample-limit', default=100e3, type=float, help="Maximum number of samples (default: very high)")
 parser.add_argument('--wc', action='store_true', help="Output format similar to 'wc'")
 args = parser.parse_args()
 
