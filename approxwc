@@ -48,9 +48,9 @@ def print_estimate():
     #print "Num lines: {numlines:.1f} [{numlines_lo:.1f}, {numlines_hi:.1f}], Bytes per Line: {bpl_mean:.1f} (se {bpl_se:.1f})".format(**globals())
     #print "Num Lines: {numlines_sig:,.0f} ({err_potential_pct:.1f}% max error), Bytes per Line: {bpl_mean:,.1f} (sd {bpl_sd:.1f}, se {bpl_se:.1f})".format(numlines_sig=smart_round(numlines, args.tolerance), err_potential_pct=err_potential*100, **globals())
     if args.wc:
-        print "{numlines:.1f}\tNA\t{filesize}\t{filename}".format(filename=args.filename, **globals())
+        print "{numlines:.1f}\tNA\t{filesize}\t{filename}".format(**globals())
     else:
-        print "{numlines_sig:,.0f} lines ({err_potential_pct:.1f}% max error, {num_blocks} samples); {filesize:,} bytes".format(numlines_sig=smart_round(numlines, args.tolerance), err_potential_pct=err_potential*100, **globals())
+        print "{numlines_sig:,.0f} lines ({err_potential_pct:.1f}% max error, {num_blocks} samples); {filesize:,} bytes ({filename})".format(numlines_sig=smart_round(numlines, args.tolerance), err_potential_pct=err_potential*100, **globals())
     #print "NUMLINES",numlines
 
 def intround(x):
@@ -70,60 +70,62 @@ def smart_round(n, tol):
         return intround(n / 10**extra) * 10**extra
 
 parser = argparse.ArgumentParser(description=__doc__.strip(), formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument('filename')
-parser.add_argument('--time-limit', '-l', default=5, type=float, help="Limit wall-clock time, in seconds (default: 5)")
+parser.add_argument('filenames', nargs='+')
+parser.add_argument('--time-limit', '-l', default=5, type=float, help="Limit wall-clock time, in seconds. LOW DEFAULT: 5")
 parser.add_argument('--tolerance', '-t', default=0.01, type=float, help="Relative error tolerance (default: .01)")
 parser.add_argument('--blocksize', '-b', default=100e3, type=float, help="Block size in bytes (default: 100e3)")
 parser.add_argument('--sample-limit', default=100e3, type=float, help="Maximum number of samples (default: very high)")
 parser.add_argument('--wc', action='store_true', help="Output format similar to 'wc'")
 args = parser.parse_args()
 
-filesize = os.stat(args.filename).st_size
-bufsize = int(args.blocksize)
-fp = open(args.filename, 'r', bufsize)
-start_time = time.time()
+for filename in args.filenames:
 
-bytes_seen = 0
-newlines_seen = 0
-num_blocks = 0
-for block in iter_blocks():
-    num_blocks += 1
-    newlines_seen += block.count('\n')
-    bytes_seen += len(block)
+    filesize = os.stat(filename).st_size
+    bufsize = int(args.blocksize)
+    fp = open(filename, 'r', bufsize)
+    start_time = time.time()
 
-    p = newlines_seen/bytes_seen
-    se = math.sqrt( p*(1-p)/bytes_seen )
+    bytes_seen = 0
+    newlines_seen = 0
+    num_blocks = 0
+    for block in iter_blocks():
+        num_blocks += 1
+        newlines_seen += block.count('\n')
+        bytes_seen += len(block)
 
-    numlines = 1 + filesize*p
-    lo = 1 + filesize*(p-1.96*se)
-    hi = 1 + filesize*(p+1.96*se)
+        p = newlines_seen/bytes_seen
+        se = math.sqrt( p*(1-p)/bytes_seen )
 
-    # Replacement adjustment isn't correct under with-replacement seek samples
-    #rest = filesize - bytes_seen
-    #numlines = 1 + newlines_seen + rest*p
-    #lo = 1+newlines_seen + rest*(p-1.96*se)
-    #lo = max(0, lo)
-    #hi = 1+newlines_seen + rest*(p+1.96*se)
+        numlines = 1 + filesize*p
+        lo = 1 + filesize*(p-1.96*se)
+        hi = 1 + filesize*(p+1.96*se)
 
-    #print num_blocks, numlines, lo,hi
-    if num_blocks < num_first_blocks: continue
+        # Replacement adjustment isn't correct under with-replacement seek samples
+        #rest = filesize - bytes_seen
+        #numlines = 1 + newlines_seen + rest*p
+        #lo = 1+newlines_seen + rest*(p-1.96*se)
+        #lo = max(0, lo)
+        #hi = 1+newlines_seen + rest*(p+1.96*se)
 
-    # Relative error is calculated as size of interval relative to estimate.
-    # Justification:  Assume we're in the 95% case of the true NumLines being
-    # inside the interval.  Conditional on that, the worst-case is if the
-    # estimate is on the very extreme of the interval, Then you want to bound
-    # how far away is the other other very extreme end -- i.e. the size of the
-    # interval.
+        #print num_blocks, numlines, lo,hi
+        if num_blocks < num_first_blocks: continue
 
-    err_potential = (hi-lo) / numlines
-    if err_potential < args.tolerance:
-        #print "Confidence satisfied ({} samples)".format(num_blocks)
-        break
-    if time.time() - start_time > args.time_limit:
-        break
-else:
-    #print "Sample limit reached ({})".format(num_blocks)
-    pass
+        # Relative error is calculated as size of interval relative to estimate.
+        # Justification:  Assume we're in the 95% case of the true NumLines being
+        # inside the interval.  Conditional on that, the worst-case is if the
+        # estimate is on the very extreme of the interval, Then you want to bound
+        # how far away is the other other very extreme end -- i.e. the size of the
+        # interval.
 
-print_estimate()
+        err_potential = (hi-lo) / numlines
+        if err_potential < args.tolerance:
+            #print "Confidence satisfied ({} samples)".format(num_blocks)
+            break
+        if time.time() - start_time > args.time_limit:
+            break
+    else:
+        #print "Sample limit reached ({})".format(num_blocks)
+        pass
+
+    print_estimate()
 
