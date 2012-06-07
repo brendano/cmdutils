@@ -44,6 +44,7 @@ p.add_option('-2', type='int', dest='f2', default=1, help="John key in RightFile
 p.add_option('--inner', action='store_const', const='inner', dest='join_mode', help="Do inner join (default)")
 p.add_option('--left', action='store_const', const='left', dest='join_mode', help="Do left join")
 p.add_option('--outer', action='store_const', const='outer', dest='join_mode', help="Do outer join")
+p.add_option('--load-all', action='store_const', dest='load_mode', const='LOAD_ALL', help="Force full loading")
 p.add_option('-d','--delim', type='string', default='\t', help="Delimiter, default tab")
 opts,args = p.parse_args()
 opts.join_mode = opts.join_mode or 'inner'
@@ -63,7 +64,6 @@ def build_index(file, key_index):
   for line in file:
     parts = line[:-1].split(opts.delim)
     key = parts[key_index]
-    #assert key not in index, "unique keys please"
     keys.append(key)
     index[key].append(parts)
     records.append(parts)
@@ -76,21 +76,26 @@ def prepare_scannable_recordset(file, key_index):
       key = parts[key_index]
       yield key, parts
   gen = inner()
-  first_record = gen.next()  ## TODO requires nonempty file
-  return itertools.chain([first_record], gen), first_record
+  first_pair = gen.next()  ## TODO assumes nonempty file
+  return itertools.chain([first_pair], gen), first_pair[1]
 
-#loadmode = 'LOAD_ALL' if opts.join_mode in ('left','outer') else 'SCAN' if opts.join_mode=='inner' else None
-loadmode='LOAD_ALL'
+if opts.join_mode in ('left','outer'):
+  loadmode = 'LOAD_ALL'
+elif opts.join_mode=='inner':
+  loadmode = 'SCAN'
+else: assert False
+if opts.load_mode is not None:
+  loadmode = opts.load_mode
 
 if loadmode=='LOAD_ALL':
-  # Read everything into memory.
+  # Read everything into memory and index it.
   # keys,records are parallel.
   index1,keys1,records1,firstrec1 = build_index(file1, opts.f1)
   index2,keys2,records2,firstrec2 = build_index(file2, opts.f2)
 elif loadmode=='SCAN':
   # Only read one into memory. Scan the other.
   index1,keys1,records1,firstrec1 = build_index(file1, opts.f1)
-  records2,firstrec2 = prepare_scannable_recordset(file2, opts.f2)
+  keyrecs2,firstrec2 = prepare_scannable_recordset(file2, opts.f2)
 else: assert False
 
 ## Record-making machinery
@@ -114,8 +119,9 @@ def make_and_output_record(rec1, rec2):
   sys.stdout.write("\n")
 
 
-## Add in dummy empty records depending on join mode
 if loadmode=='LOAD_ALL':
+
+  ## Add in dummy empty records depending on join mode
   if opts.join_mode=='left':
     output_keys = list(unique_everseen(keys1))
   elif opts.join_mode=='inner':
@@ -127,16 +133,32 @@ if loadmode=='LOAD_ALL':
     output_keys = unique_everseen(g)
   else:
     assert False, "bad join type %s" % (repr(opts.join_mode), )
-elif loadmode=='SCAN':
-  # we have to do this online. not now.
-  pass
 
-
-## Final loop
-if loadmode=='LOAD_ALL':
+  ## Final loop
   for key in output_keys:
     for rec1 in index1.get(key, [None]):
       for rec2 in index2.get(key, [None]):
         make_and_output_record(rec1, rec2)
+
+elif loadmode=='SCAN' and opts.join_mode=='inner':
+  for key,rec2 in keyrecs2:
+    if key not in index1: continue
+    for rec1 in index1[key]:
+      make_and_output_record(rec1, rec2)
+
+else: assert False
+
+## Scan left-join i think would work like this...
+## but this code is untested therefore disabled
+#elif loadmode=='SCAN' and opts.join_mode=='left':
+#  seen_keys1 = set()
+#  for key,rec2 in keyrecs2:
+#    if key not in index1: continue
+#    seen_keys1.add(key)
+#    for rec1 in index1[key]:
+#      make_and_output_record(rec1, rec2)
+#  for key in (set(index1.iterkeys()) - seen_keys1):
+#    make_and_output_record(rec1, None)
+
 
 # vim: sw=2:sts=2
