@@ -66,6 +66,9 @@ elif num_dups == len(items):
 else:
   print "%d unique values" % (len(counts))
 
+if N==0:
+  sys.exit()
+
 if N <= 3:
   for x in items: writeln(x)
 

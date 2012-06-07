@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+"""
+Guess the character encoding of stdin, via the 'chardet' library.
+Sometimes does not need to read the whole input.
+"""
+import sys
+import json
+import chardet # http://chardet.feedparser.org/docs/usage.html#usage.basic
+
+#data = sys.stdin.read()
+#print json.dumps(chardet.detect(data))
+
+from chardet.universaldetector import UniversalDetector
+detector = UniversalDetector()
+for line in sys.stdin:
+  detector.feed(line)
+  if detector.done: break
+detector.close()
+print json.dumps(detector.result)
+
+
