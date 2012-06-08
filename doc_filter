@@ -7,9 +7,8 @@ Iterate through DocBigList, and print a line only if its DocID is in the
 FilterList.
 DocBigList may be '-', meaning stdin.
 
-This actually is equivalent to 'hashjoin' inner join *if* both files have
-unique keys (as hopefully is always the case in doc list files).... HOWEVER,
-this script does NOT need to load the DocBigList all in at once.  Yay.
+This actually is equivalent to hashjoin's inner join if the left file has
+unique keys.
 """
 
 import sys
