@@ -1,20 +1,15 @@
 #!/usr/bin/env python
-"""hashjoin  [options]  LeftFile RightFile
+"""
+hashjoin  [options]  LeftFile RightFile
 
+Joins two tabular files via equality on respective key columns you specify.
 Implemented via hash indexing so
  * No need for pre-sorting
- * but: Everything must fit into memory
-
-If you run it on two lists, you get a set intersection.
+ * but: Everything (or just the smaller file) must fit into memory
 
 Hopefully this easier to use than unix join.  You don't get weird deceptive
 results when the data isn't sorted the way 'join' expects.
 """
-
-#TODO only one file needs to be loaded into memory.  Should pick the smaller
-#one.  Would be very useful for scanning a file for a small set of records (you
-#can do this with a grep disjunction, but is a pain for, say, a thousand
-#records).
 
 import sys,optparse,itertools
 from collections import defaultdict
