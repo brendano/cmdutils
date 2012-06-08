@@ -35,7 +35,7 @@ def unique_everseen(iterable, key=None):
 
 p = optparse.OptionParser(usage=__doc__.strip())
 p.add_option('-1', type='int', dest='f1', default=1, help="Join key in LeftFile (1-indexed), default 1")
-p.add_option('-2', type='int', dest='f2', default=1, help="John key in RightFile (1-indexed), default 1")
+p.add_option('-2', type='int', dest='f2', default=1, help="Join key in RightFile (1-indexed), default 1")
 p.add_option('--inner', action='store_const', const='inner', dest='join_mode', help="Do inner join (default)")
 p.add_option('--left', action='store_const', const='left', dest='join_mode', help="Do left join")
 p.add_option('--outer', action='store_const', const='outer', dest='join_mode', help="Do outer join")
