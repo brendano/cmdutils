@@ -57,7 +57,7 @@ assert file1 != file2
 def build_index(file, key_index):
   index,keys,records = defaultdict(list), [], []
   for line in file:
-    parts = line[:-1].split(opts.delim)
+    parts = line.rstrip('\n').split(opts.delim)
     key = parts[key_index]
     keys.append(key)
     index[key].append(parts)
@@ -67,7 +67,7 @@ def build_index(file, key_index):
 def prepare_scannable_recordset(file, key_index):
   def inner():
     for line in file:
-      parts = line[:-1].split(opts.delim)
+      parts = line.rstrip('\n').split(opts.delim)
       key = parts[key_index]
       yield key, parts
   gen = inner()
