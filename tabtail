@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# tabtail
+
+# example usage:
+#   tabtail -n100 *.log
+#   tabtail -F *.log
+
+# This is like 'tail' but outputs in the format
+#   filename \t line
+
+# analogously to how 'grep pat files' reports the filename for every line.
+
+tail "$@" | awk '/==>/{f=$2;next} {print f "\t" $0}' 
