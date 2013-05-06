@@ -100,7 +100,9 @@ if True:
   if all_float or all_int:
     m = mean(items)
     write(" \tMean: %.4g" % m)
-    write(" \tSD: %.4g" % sd(items, m))
+    _sd = sd(items,m)
+    write("  SD: %.4g" % _sd)
+    write("  SE: %.4g" % (_sd / math.sqrt(N)))
   write("\n")
 if N >= 5:
   writeln("    75:  %s" % items[safe(.75*N)])
