@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# tabhead
+
+# example usage:
+#   tabhead -n100 *.log
+
+# This is like 'head' but outputs in the format
+#   filename \t line
+
+# analogously to how 'grep pat files' reports the filename for every line.
+
+head "$@" | awk '/==>/{f=$2;next} {print f "\t" $0}' 
+
