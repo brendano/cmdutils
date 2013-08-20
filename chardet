@@ -5,10 +5,6 @@ Sometimes does not need to read the whole input.
 """
 import sys
 import json
-import chardet # http://chardet.feedparser.org/docs/usage.html#usage.basic
-
-#data = sys.stdin.read()
-#print json.dumps(chardet.detect(data))
 
 from chardet.universaldetector import UniversalDetector
 detector = UniversalDetector()
