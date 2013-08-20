@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+## originally was this, but doesn't get column alignment right
+# l () {
+#     env CLICOLOR_FORCE=1 ls $lsopt_coloralways -l "$@" | grep --color=none -v '^total' | perl -pe 'if (!/^\S+:/) { s/^ *\S+ *\S+ *\S+ *\S+// } '
+# }
+
+
+import sys,re,os
+
+p = os.popen("env CLICOLOR_FORCE=1 ls {coloropts} -l {args}".format(
+  coloropts='-G' if 'darwin' in sys.platform else '--color=always',
+  args=' '.join('"%s"' % x for x in sys.argv[1:])))
+
+data = p.read()
+lines = data.strip().split("\n")
+if lines[0].startswith('total'): lines = lines[1:]
+lines = [L for L in lines if L.strip()]
+if not lines: sys.exit()
+matches = [re.search(r'^ *\S+ *\S+ *\S+ *\S+ ', x) for x in lines]
+column = max(m.end()-1 if m else 0 for m in matches)
+for line in lines:
+  print line[column:]
