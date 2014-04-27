@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
-## originally was this, but doesn't get column alignment right
+# Remove the permission and ownership columns from "ls -l".
+# Thus the only 3 pieces of information are: file size, last modified time, and filename.
+# For data processing/modeling, I find these the only important things.
+# Also, can use "sort -n" to rank by file size without having to fiddle with "-k".
+# It's handy to alias this script; for example, as "l".
+
+## This script originally was the following, but doesn't get column alignment right
 # l () {
 #     env CLICOLOR_FORCE=1 ls $lsopt_coloralways -l "$@" | grep --color=none -v '^total' | perl -pe 'if (!/^\S+:/) { s/^ *\S+ *\S+ *\S+ *\S+// } '
 # }
@@ -16,13 +22,25 @@ data = p.read()
 lines = data.strip().split("\n")
 if lines[0].startswith('total'): lines = lines[1:]
 lines = [L for L in lines if L.strip()]
-# specific to linux GNU ls, coloring at start of line screws up position calculations
+
+# Coloring at start of line screws up positioning -- from linux GNU ls.
+# Below rendered by vim, so ^[ is the ASCII escape control character, but all
+# else are literal characters (in particular, a [ after the escape).
 # ^[[0m^[[00;32m-rw-r--r--  1 brendano brendano       70 Jul 30  2009 ^[[m^[[00mNOTES^[[0m
 # ^[[00;32m-rw-r--r--  1 brendano brendano       53 Dec 12  2009 ^[[m^[[00mNOTES.blog^[[0m
 # ^[[00;32mdrwxr-xr-x  3 brendano brendano     4096 Mar  9  2010 ^[[m^[[00;34mR^[[0m
 lines = [re.sub('^\033\\[0m',"",L) for L in lines]
 lines = [re.sub('^\033\\[00;32m',"",L) for L in lines]
 if not lines: sys.exit()
+
+# Regex matches for the permission and ownership columns
+# drwxr-xr-x  3 brendano brendano     4096 Apr 25 22:51 old
+# drwxr-xr-x  4 brendano root         4096 Apr 25 22:53 onetime_view
+# drwxr-xr-x  8 brendano brendano     4096 Sep 22  2008 onlinepoll
+#                                ^
+#          Want this column -----|
+#
+
 matches = [re.search(r'^ *\S+ *\S+ *\S+ *\S+ ', x) for x in lines]
 column = max(m.end()-1 if m else 0 for m in matches)
 for line in lines:
