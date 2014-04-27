@@ -16,6 +16,12 @@ data = p.read()
 lines = data.strip().split("\n")
 if lines[0].startswith('total'): lines = lines[1:]
 lines = [L for L in lines if L.strip()]
+# specific to linux GNU ls, coloring at start of line screws up position calculations
+# ^[[0m^[[00;32m-rw-r--r--  1 brendano brendano       70 Jul 30  2009 ^[[m^[[00mNOTES^[[0m
+# ^[[00;32m-rw-r--r--  1 brendano brendano       53 Dec 12  2009 ^[[m^[[00mNOTES.blog^[[0m
+# ^[[00;32mdrwxr-xr-x  3 brendano brendano     4096 Mar  9  2010 ^[[m^[[00;34mR^[[0m
+lines = [re.sub('^\033\\[0m',"",L) for L in lines]
+lines = [re.sub('^\033\\[00;32m',"",L) for L in lines]
 if not lines: sys.exit()
 matches = [re.search(r'^ *\S+ *\S+ *\S+ *\S+ ', x) for x in lines]
 column = max(m.end()-1 if m else 0 for m in matches)
