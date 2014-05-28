@@ -1,0 +1,55 @@
+#!/usr/bin/env awk -f
+
+# show only duplicate lines/records
+# (see also dedup)
+
+# use argument k=2  to dedupe on the 2nd key
+# and other awk options e.g.
+#  -F'\t'  for tab-separation
+#  RS=';'    for record separator
+
+# hashing strategy: input can be unsorted, but loads whole file in memory at once
+BEGIN { 
+  if (!k) k=0 
+}
+{ counts[$k]++; saves[$k] = saves[$k] $0 "\n"}
+END {
+  for (key in counts) {
+    if (counts[key] > 1) {
+      printf("%s", saves[key])   # no newline
+    }
+  }
+}
+
+
+## pre-sorting strategy: duplicate lines must be grouped together.
+## memory usage is constant like uniq -c.
+## so first do e.g. sort -k
+# BEGIN { if (!k) k=0 }
+# NR>1 && savekey==$k && !in_dup_run { print saveline; in_dup_run=1}
+# NR>1 && savekey==$k && in_dup_run  { print $0}
+# savekey!=$k                        { in_dup_run=0 }
+# { savekey=$k; saveline=$0 }
+
+
+## both versions should see the following.
+
+# $ echo "0 1 1 2 3 2 2 4" | tr ' ' '\n' |printdups    
+# 1
+# 1
+# 2
+# 2
+# $ echo "0 1 1 2 3 2 2 4" | tr ' ' '\n' |printdups k=1
+# 1
+# 1
+# 2
+# 2
+# $ echo "0 1 1 2 3 2 2 4" | tr ' ' '\n' |printdups k=99
+# 0
+# 1
+# 1
+# 2
+# 3
+# 2
+# 2
+# 4
