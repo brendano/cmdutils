@@ -11,11 +11,17 @@
 #     env CLICOLOR_FORCE=1 ls $lsopt_coloralways -l "$@" | grep --color=none -v '^total' | perl -pe 'if (!/^\S+:/) { s/^ *\S+ *\S+ *\S+ *\S+// } '
 # }
 
+# use --color=none if you want to disable color
+
 
 import sys,re,os
 
-p = os.popen("env CLICOLOR_FORCE=1 ls {coloropts} -l {args}".format(
-  coloropts='-G' if 'darwin' in sys.platform else '--color=always',
+use_color = '--color=none' not in sys.argv
+
+p = os.popen("env {envcolor}CLICOLOR_FORCE=1 ls {coloropts} -l {args}".format(
+  envcolor='CLICOLOR_FORCE=1' if use_color else '',
+  coloropts='' if not use_color else
+            '-G' if 'darwin' in sys.platform else '--color=always',
   args=' '.join('"%s"' % x for x in sys.argv[1:])))
 
 data = p.read()
@@ -44,4 +50,6 @@ if not lines: sys.exit()
 matches = [re.search(r'^ *\S+ *\S+ *\S+ *\S+ ', x) for x in lines]
 column = max(m.end()-1 if m else 0 for m in matches)
 for line in lines:
-  print line[column:]
+  line = line[column:]
+  if line.strip():
+    print line
