@@ -1,0 +1,30 @@
+I thought I saw md5sort was emitting a smaller number of lines than input.
+Tested it again on the data I thought I saw it on, plus some randomly
+generated files.  Everything looked fine.
+
+hobbes:~/sw/cmdutils/md5sort_tests % ll                                                                                                                                              
+total 15041376                                                                                                                                                                       
+-rw-r--r-- 1 brenocon faculty 16458934503 Oct  1 00:31 daily.10k.texts.md5sort                                                                                                       
+-rw-r--r-- 1 brenocon faculty         124 Sep 30 23:54 gen.py                                                                                                                        
+-rw-r--r-- 1 brenocon faculty     2000000 Sep 30 23:53 samp.txt                                                                                                                      
+-rw-r--r-- 1 brenocon faculty     2000000 Sep 30 23:53 samp.txt.md5sort                                                                                                              
+-rw-r--r-- 1 brenocon faculty     6889156 Sep 30 23:53 samp2.txt                                                                                                                     
+-rw-r--r-- 1 brenocon faculty     6889156 Sep 30 23:53 samp2.txt.md5sort                                                                                                             
+-rw-r--r-- 1 brenocon faculty  1998332213 Sep 30 23:59 samp3.txt                                                                                                                     
+-rw-r--r-- 1 brenocon faculty  1998332213 Oct  1 01:06 samp3.txt.md5sort                                                                                                             
+hobbes:~/sw/cmdutils/md5sort_tests % wc -l *                                                                                                                                         
+  214835812 daily.10k.texts.md5sort                                                                                                                                                  
+          5 gen.py                                                                                                                                                                   
+    1000000 samp.txt                                                                                                                                                                 
+    1000000 samp.txt.md5sort                                                                                                                                                         
+    1000000 samp2.txt                                                                                                                                                                
+    1000000 samp2.txt.md5sort                                                                                                                                                        
+  290081412 samp3.txt                                                                                                                                                                
+  290081412 samp3.txt.md5sort                                                                                                                                                        
+  798998641 total                                                                                                                                                                    
+
+hobbes:~/sw/cmdutils/md5sort_tests % wc -l ~/daily.10k.texts daily.10k.texts.md5sort                                                                                                 
+  214835812 /home/brenocon/daily.10k.texts                                                                                                                                           
+  214835812 daily.10k.texts.md5sort                                                                                                                                                  
+  429671624 total                                                                                                                                                                    
+
