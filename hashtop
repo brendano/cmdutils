@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+"""
+Selects the top-K input lines with the highest hash values, using O(K) storage.
+This is a way of doing a streaming random sample.
+It's an alternative to reservoir sampling, with a stable selection function.
+By default use a well-known, well-defined hash function (MurmurHash3).
+I used to use md5 for this but it's substantially slower than murmurhash.
+Python's hash() could be ok too, but it's not as widely available as
+murmurhash.
+We use the full content of the line for the hash, *including* the trailing
+newline.
+By default, sample size is 10 and takes standard input (like the head command).
+"""
+
+import sys
+import heapq
+import types
+import smhasher # https://pypi.python.org/pypi/smhasher
+import argparse
+p = argparse.ArgumentParser(description=__doc__.strip())
+p.add_argument('sample_size', nargs='?', default="10")
+p.add_argument('input_file', nargs='?')
+possible_hash_functions = sorted([x for x in dir(smhasher) \
+        if not x.startswith('__') and \
+        isinstance(getattr(smhasher,x), types.FunctionType)])
+p.add_argument('--hash-function', default='murmur3_x64_64', choices=possible_hash_functions)
+p.add_argument('--all', action='store_true', help="To hash-sort the entire input: do not sample, instead return all the data (sorted in descending order. do not combine with --dont-order-output.)")
+p.add_argument('--salt', default=None, type=str, help="Salt string to prepend before calling hash function; this is like setting a random seed. Default is to not use a salt.")
+p.add_argument('--dont-order-output', action='store_true', help="Usually we force the final output to be in descending hash order.  With this flag, let it be ordered due to implementation details of heapq; the first item actually is the lowest in the set. (Saves some compute time for the final sort.)")
+args = p.parse_args()
+
+hash_function = getattr(smhasher, args.hash_function)
+if args.salt:
+    saltstr = args.salt
+    final_hasher = lambda s: hash_function(saltstr + s)
+else:
+    final_hasher = hash_function
+
+if args.input_file:
+    input = open(args.input_file, 'r')
+else:
+    input = sys.stdin
+
+K = int( float( args.sample_size.replace("-","") ))
+topk_lines = heapq.nlargest(K, input, key=final_hasher)
+
+if not args.dont_order_output:
+    topk_lines.sort(reverse=True, key=final_hasher)
+
+for line in topk_lines:
+    sys.stdout.write(line)
