@@ -4,6 +4,7 @@
     setand  [-c] <set1> <set2> - set intersection
     setor   [-c] <set1> <set2> - set union
 -c : only give count of the result.
+-r : reverse the order for setdiff: (set2 \ set1)
 
 Output order is randomish
 We don't newline chomp, so a bug if your file doesnt end with a newline 
@@ -18,9 +19,13 @@ brendan o'connor - anyall.org/setdiff.py
 from __future__ import division
 import sys
 do_count = False
+do_reverse = False
 if '-c' in sys.argv:
   sys.argv.pop( sys.argv.index('-c') )
   do_count = True
+if '-r' in sys.argv:
+  sys.argv.pop( sys.argv.index('-r') )
+  do_reverse = True
 if len(sys.argv) == 1:
   print __doc__.strip()
   sys.exit(1)
@@ -29,6 +34,8 @@ file1 = sys.stdin if file1=='-' else open(file1)
 file2 = sys.stdin if file2=='-' else open(file2)
 if file1==file2==sys.stdin: raise Exception("can't both be stdin")
 set1,set2 = set(file1), set(file2)
+if do_reverse:
+    set1,set2 = set2,set1
 cmdname = sys.argv[0].split("/")[-1].replace(".py","")
 if cmdname == 'setdiff':   result = set1 - set2
 elif cmdname == 'setand':  result = set1 & set2
