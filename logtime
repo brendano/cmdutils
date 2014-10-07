@@ -9,5 +9,5 @@ STDOUT.sync=true
 STDIN.sync=true
 
 STDIN.each do |line|
-  puts "#{Time.now.strftime("%Y-%m-%dT%H:%M:%S")}\t#{line}"
+  puts "#{Time.now.strftime("%Y-%m-%dT%H:%M:%S%z")}\t#{line}"
 end
