@@ -41,8 +41,11 @@ if args.input_file:
 else:
     input = sys.stdin
 
-K = int( float( args.sample_size.replace("-","") ))
-topk_lines = heapq.nlargest(K, input, key=final_hasher)
+if args.all:
+    topk_lines = list(input)
+else:
+    K = int( float( args.sample_size.replace("-","") ))
+    topk_lines = heapq.nlargest(K, input, key=final_hasher)
 
 if not args.dont_order_output:
     topk_lines.sort(reverse=True, key=final_hasher)
