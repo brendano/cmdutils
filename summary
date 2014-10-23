@@ -1,14 +1,24 @@
 #!/usr/bin/env python
 
-"""
+r"""
 Summary statistics for a list of numbers or strings (on stdin).
+Loosely inspired by R's summary(): call on anything, learn something.
   * Number, number of types
   * Type counts -- if small number of types
     -c:  force showing counts
   * Quantiles -- even for strings
   * Mean,SD -- only for numbers
 
-Loosely inspired by R's summary(): call on anything, learn something.
+
+EXAMPLE
+% perl -ne 'print "$1\n" if /"num_junk":(\d+)/' all.simple_counts | summary
+
+N = 816                 31 unique values
+Min   :  1
+    25:  5
+Median:  11     Mean: 11.36  SD: 7.485  SE: 0.262
+    75:  17
+Max   :  31
 """
 
 from __future__ import division
