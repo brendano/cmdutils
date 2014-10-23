@@ -34,7 +34,15 @@ dateseq 2009-01
 dateseq 2008-12 2009-01
 """
 
-if '--test' in sys.argv:
+import argparse
+p = argparse.ArgumentParser()
+p.add_argument("date1")
+p.add_argument("date2",nargs='?')
+p.add_argument("--test",action='store_true')
+p.add_argument("--format", default="%Y-%m-%d")
+args = p.parse_args()
+
+if args.test:
   import os
   lines = tests.strip().split("\n")
   for cmd in lines:
@@ -42,8 +50,8 @@ if '--test' in sys.argv:
     os.system(cmd + " | summary")
   sys.exit()
 
-date1 = sys.argv[1]
-date2 = sys.argv[2] if len(sys.argv) >= 3 else date1
+date1 = args.date1
+date2 = args.date2 or date1
 
 def parse_datetime(s, mode):
   if re.search(r'^\d\d\d\d-\d\d-\d\d$', s):
@@ -83,7 +91,7 @@ assert date1 <= date2
 
 d = date1
 while d <= date2:
-  print d.strftime('%Y-%m-%d')
+  print d.strftime(args.format)
   d = d + timedelta(days=1)
 
 
