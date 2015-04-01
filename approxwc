@@ -78,6 +78,8 @@ parser.add_argument('--sample-limit', default=100e3, type=float, help="Maximum n
 parser.add_argument('--wc', action='store_true', help="Output format similar to 'wc'")
 args = parser.parse_args()
 
+grand_total = 0
+
 for filename in args.filenames:
 
     filesize = os.stat(filename).st_size
