@@ -21,8 +21,9 @@ from __future__ import division
 import math,sys,os,random,time
 import argparse
 
-num_first_blocks = 10
 def block_positions():
+    global args
+    num_first_blocks = int(args.min_samples)
     global filesize, bufsize
     if filesize <= num_first_blocks*bufsize:
         yield 0,filesize
@@ -35,7 +36,7 @@ def block_positions():
     # would be better to do a recursive deterministic sampler
     # e.g. 0,1,.5,.25,.75,.125,.375,.625,.875
     # i forget how to implement though
-    for x in xrange(int(args.sample_limit) - num_first_blocks):
+    for x in xrange(int(args.max_samples) - num_first_blocks):
         yield random.randrange(bufsize, filesize-2*bufsize), bufsize
 
 def iter_blocks():
@@ -48,10 +49,27 @@ def print_estimate():
     #print "Num lines: {numlines:.1f} [{numlines_lo:.1f}, {numlines_hi:.1f}], Bytes per Line: {bpl_mean:.1f} (se {bpl_se:.1f})".format(**globals())
     #print "Num Lines: {numlines_sig:,.0f} ({err_potential_pct:.1f}% max error), Bytes per Line: {bpl_mean:,.1f} (sd {bpl_sd:.1f}, se {bpl_se:.1f})".format(numlines_sig=smart_round(numlines, args.tolerance), err_potential_pct=err_potential*100, **globals())
     if args.wc:
-        print "{numlines:.1f}\tNA\t{filesize}\t{filename}".format(**globals())
+        print "{numlines:12.1f}\tNA\t{filesize:12}\t{filename}".format(**globals())
     else:
-        print "{numlines_sig:,.0f} lines ({err_potential_pct:.1f}% max error, {num_blocks} samples); {filesize:,} bytes ({filename})".format(numlines_sig=smart_round(numlines, args.tolerance), err_potential_pct=err_potential*100, **globals())
+        print "{numlines_sig:12,.0f} lines (relerr {err_potential_pct:4.1f}%, {num_blocks} samples), {filesize:12,} bytes ({filename})".format(
+                numlines_sig=smart_round(numlines, err_potential), err_potential_pct=err_potential*100 if numlines>0 else 0, **globals())
     #print "NUMLINES",numlines
+
+def print_totals():
+    p = grand_newlines_seen / grand_bytes_seen
+    se = math.sqrt(p*(1-p) / grand_bytes_seen)
+    lo = 1 + grand_total_bytes*(p-1.96*se)
+    hi = 1 + grand_total_bytes*(p+1.96*se)
+    grand_total_lines = p * grand_total_bytes
+    err_potential = (hi-lo) / grand_total_lines
+    if args.wc:
+        d=locals()
+        d.update(globals())
+        print "{grand_total_lines:12.1f}\tNA\t{grand_total_bytes:12d}\ttotal".format(**d)
+    else:
+        print "{numlines_sig:12,.0f} lines (relerr {err_potential_pct:4.1f}%), {grand_total_bytes:12,} bytes (total)".format(
+                numlines_sig=grand_total_lines,
+                err_potential_pct=err_potential*100, **globals())
 
 def intround(x):
     return math.ceil(x) if x-math.floor(x) >= 0.5 else math.floor(x)
@@ -63,6 +81,7 @@ def smart_round(n, tol):
         2%   => 2 sigdig
     """
     sigdig = math.ceil(-math.log10(tol)) + 1
+    sigdig = max(sigdig, 2)
     extra = math.ceil(math.log10(n)) - sigdig
     if extra <= 0:
         return n
@@ -71,14 +90,19 @@ def smart_round(n, tol):
 
 parser = argparse.ArgumentParser(description=__doc__.strip(), formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument('filenames', nargs='+')
-parser.add_argument('--time-limit', '-l', default=5, type=float, help="Limit wall-clock time, in seconds. LOW DEFAULT: 5")
-parser.add_argument('--tolerance', '-t', default=0.01, type=float, help="Relative error tolerance (default: .01)")
+parser.add_argument('--time-limit', '-l', default=5, type=float, help="Limit wall-clock time per file, in seconds. LOW DEFAULT: 5")
+parser.add_argument('--tolerance', '-t', default=0.1, type=float, help="Relative error tolerance (default is low)")
 parser.add_argument('--blocksize', '-b', default=100e3, type=float, help="Block size in bytes (default: 100e3)")
-parser.add_argument('--sample-limit', default=100e3, type=float, help="Maximum number of samples (default: very high)")
+parser.add_argument('--max-samples', default=100e3, type=float, help="Maximum number of samples (default: very high)")
+parser.add_argument('--min-samples', default=3, type=float, help="Minimum number of samples")
 parser.add_argument('--wc', action='store_true', help="Output format similar to 'wc'")
 args = parser.parse_args()
 
-grand_total = 0
+grand_total_bytes = 0
+grand_bytes_seen = 0
+grand_newlines_seen = 0
+
+# err_potential_pct = 0
 
 for filename in args.filenames:
 
@@ -95,6 +119,11 @@ for filename in args.filenames:
         newlines_seen += block.count('\n')
         bytes_seen += len(block)
 
+        if bytes_seen==0: continue
+
+        grand_bytes_seen += bytes_seen
+        grand_newlines_seen += newlines_seen
+
         p = newlines_seen/bytes_seen
         se = math.sqrt( p*(1-p)/bytes_seen )
 
@@ -110,7 +139,7 @@ for filename in args.filenames:
         #hi = 1+newlines_seen + rest*(p+1.96*se)
 
         #print num_blocks, numlines, lo,hi
-        if num_blocks < num_first_blocks: continue
+        if num_blocks < args.min_samples: continue
 
         # Relative error is calculated as size of interval relative to estimate.
         # Justification:  Assume we're in the 95% case of the true NumLines being
@@ -129,5 +158,11 @@ for filename in args.filenames:
         #print "Sample limit reached ({})".format(num_blocks)
         pass
 
+    grand_total_bytes += filesize
+
+    if bytes_seen==0:
+        numlines = 0
     print_estimate()
 
+if len(args.filenames) > 1:
+    print_totals()
