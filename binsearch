@@ -52,18 +52,22 @@ class BinaryFileSearcher:
             return ( (None,None), (pos,self.fp.readline()) )
 
         self.go_to_prev_newline()
-        pos1 = self.fp.tell()
-        line1=self.fp.readline()
-        pos2=self.fp.tell()
-        line2=self.fp.readline()
+        pos1  = self.fp.tell()
+        line1 = self.fp.readline()
+        pos2  = self.fp.tell()
+        line2 = self.fp.readline()
         return ( (pos1,line1), (pos2,line2) )
 
     def find_position(self, needle):
-        """return the byte offset of the first line that contains needle as a prefix."""
+        """
+        return the byte offset of the first line that contains needle as a prefix.
+        return None if no lines in the file match.
+        """
         bounds = (0,self.size)
         prevbounds = None
         while True:
-            if bounds[0] >= bounds[1]: break
+            if bounds[0] >= bounds[1]:
+                return None
             if bounds==prevbounds:
                 print "Failed to find match. TODO might still be buggy"
                 return None
