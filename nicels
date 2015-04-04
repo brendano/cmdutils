@@ -1,18 +1,37 @@
 #!/usr/bin/env python
 
-# Remove the permission and ownership columns from "ls -l".
-# Thus the only 3 pieces of information are: file size, last modified time, and filename.
-# For data processing/modeling, I find these the only important things.
-# Also, can use "sort -n" to rank by file size without having to fiddle with "-k".
-# It's handy to alias this script; for example, as "l".
+"""
+Variant of "ls -l" that only shows size, date, and name, and comma-ifies the sizes.
+This is handy for data processing and modeling.
 
-## This script originally was the following, but doesn't get column alignment right
-# l () {
-#     env CLICOLOR_FORCE=1 ls $lsopt_coloralways -l "$@" | grep --color=none -v '^total' | perl -pe 'if (!/^\S+:/) { s/^ *\S+ *\S+ *\S+ *\S+// } '
-# }
+Flags
+  --color=none to disable color
 
-# use --color=none if you want to disable color
+Example:
 
+          1,192 Apr  4 13:16 NOTES.txt
+ 19,944,388,440 Apr  2 20:02 extracts.BaseNP+FullNP
+ 10,853,368,704 Apr  2 19:39 extracts.ShortNP
+  3,934,536,932 Apr  2 19:39 extracts.ShortVP
+  7,922,904,301 Apr  4 01:01 extracts.VerbPatterns
+            483 Apr  4 13:16 go.sh
+          5,931 Apr  4 13:41 posphrases.py
+         93,517 Apr  4 13:37 semiautomatics.phrases
+         29,802 Apr  4 13:43 semiautomatics.phrases.niceview
+              4 Apr  2 19:47 v1
+    277,599,695 Apr  2 20:08 vocab.BaseNP+FullNP
+     65,220,171 Apr  2 19:43 vocab.ShortNP
+     31,427,214 Apr  2 19:40 vocab.ShortVP
+    135,752,801 Apr  4 01:03 vocab.VerbPatterns
+    277,599,695 Apr  2 23:35 vocab.doccounts.BaseNP+FullNP
+     65,220,171 Apr  2 23:39 vocab.doccounts.ShortNP
+     31,427,214 Apr  2 23:40 vocab.doccounts.ShortVP
+
+This script originally was the following, but doesn't get column alignment right
+l () {
+    env CLICOLOR_FORCE=1 ls $lsopt_coloralways -l "$@" | grep --color=none -v '^total' | perl -pe 'if (!/^\S+:/) { s/^ *\S+ *\S+ *\S+ *\S+// } '
+}
+"""
 
 import sys,re,os
 
@@ -39,17 +58,26 @@ lines = [re.sub('^\033\\[0m',"",L) for L in lines]
 lines = [re.sub('^\033\\[00;32m',"",L) for L in lines]
 if not lines: sys.exit()
 
-# Regex matches for the permission and ownership columns
+
+def commaize(s, targetlen):
+    num = int(s.strip())
+    commaized = ("{:%d,}" % targetlen).format(num)
+    assert len(commaized) <= targetlen
+    return commaized
+
+# Regex matches for the permission, ownership, and size from e.g.
 # drwxr-xr-x  3 brendano brendano     4096 Apr 25 22:51 old
 # drwxr-xr-x  4 brendano root         4096 Apr 25 22:53 onetime_view
 # drwxr-xr-x  8 brendano brendano     4096 Sep 22  2008 onlinepoll
-#                                ^
-#          Want this column -----|
-#
 
-matches = [re.search(r'^ *\S+ *\S+ *\S+ *\S+ ', x) for x in lines]
-column = max(m.end()-1 if m else 0 for m in matches)
-for line in lines:
-  line = line[column:]
-  if line.strip():
-    print line
+PAT = r'^\s*(\S+\s*){5}'
+matches = [re.search(PAT, x) for x in lines]
+size_strs = [m.group(0).split()[-1] if m else "" for m in matches]
+size_c_strs = ["{:,}".format(int(s)) if s else "" for s in size_strs]
+maxlen = max(len(s) for s in size_c_strs)
+
+for size_str, line in zip(size_c_strs, lines):
+    line_after_first5 = re.sub(PAT, "", line)
+    newline = " {} {}".format(size_str.rjust(maxlen), line_after_first5)
+    print newline
+
