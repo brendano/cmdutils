@@ -6,12 +6,23 @@ Sometimes does not need to read the whole input.
 import sys
 import json
 
+def proc(filename, stream):
+    detector.reset()
+    for line in stream:
+        detector.feed(line)
+        if detector.done: break
+    detector.close()
+    d = dict(detector.result)
+    d['filename'] = filename
+    print json.dumps(d)
+
 from chardet.universaldetector import UniversalDetector
 detector = UniversalDetector()
-for line in sys.stdin:
-  detector.feed(line)
-  if detector.done: break
-detector.close()
-print json.dumps(detector.result)
 
+if len(sys.argv) <= 1:
+    proc("-", sys.stdin)
+else:
+    for filename in sys.argv[1:]:
+        with open(filename) as f:
+            proc(filename, f)
 
