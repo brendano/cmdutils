@@ -34,6 +34,7 @@ l () {
 """
 
 import sys,re,os
+PY27 = sys.version_info >= (2,7)
 
 use_color = '--color=none' not in sys.argv
 
@@ -46,7 +47,7 @@ p = os.popen("env {envcolor}CLICOLOR_FORCE=1 ls {coloropts} -l {args}".format(
 data = p.read()
 lines = data.strip().split("\n")
 if lines[0].startswith('total'): lines = lines[1:]
-lines = [L for L in lines if L.strip()]
+# lines = [L for L in lines if L.strip()]
 
 # Coloring at start of line screws up positioning -- from linux GNU ls.
 # Below rendered by vim, so ^[ is the ASCII escape control character, but all
@@ -59,25 +60,34 @@ lines = [re.sub('^\033\\[00;32m',"",L) for L in lines]
 if not lines: sys.exit()
 
 
-def commaize(s, targetlen):
-    num = int(s.strip())
-    commaized = ("{:%d,}" % targetlen).format(num)
-    assert len(commaized) <= targetlen
-    return commaized
+def commaize(s):
+    try:
+        num = int(s.strip())
+    except ValueError:
+        return s
+    if not PY27:
+        return str(num)
+    # commaized = ("{:%d,}" % targetlen).format(num)
+    # assert len(commaized) <= targetlen
+    return "{:,}".format(num)
 
 # Regex matches for the permission, ownership, and size from e.g.
 # drwxr-xr-x  3 brendano brendano     4096 Apr 25 22:51 old
 # drwxr-xr-x  4 brendano root         4096 Apr 25 22:53 onetime_view
 # drwxr-xr-x  8 brendano brendano     4096 Sep 22  2008 onlinepoll
 
-PAT = r'^\s*(\S+\s*){5}'
+PAT = r'^\s*(\S+\s+){5}'
 matches = [re.search(PAT, x) for x in lines]
 size_strs = [m.group(0).split()[-1] if m else "" for m in matches]
-size_c_strs = ["{:,}".format(int(s)) if s else "" for s in size_strs]
+size_c_strs = [commaize(s) for s in size_strs]
 maxlen = max(len(s) for s in size_c_strs)
 
 for size_str, line in zip(size_c_strs, lines):
-    line_after_first5 = re.sub(PAT, "", line)
-    newline = " {} {}".format(size_str.rjust(maxlen), line_after_first5)
-    print newline
+    m = re.search(PAT, line)
+    if m:
+        line_after_first5 = re.sub(PAT, "", line)
+        newline = " %s %s" % (size_str.rjust(maxlen), line_after_first5)
+        print newline
+    else:
+        print line
 
