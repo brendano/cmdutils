@@ -1,4 +1,4 @@
-#!/usr/bin/env awk -f
+#!/usr/bin/awk -f
 
 # show only duplicate lines/records
 # (see also dedup)
