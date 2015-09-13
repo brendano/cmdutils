@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+# vim:sts=2:sw=2
 """ sorts lines (or tab-sep records) by md5, a quasi-random shuffle.
 optionally prepends with the md5 id too. 
-brendan o'connor - anyall.org - gist.github.com/brendano """
+brendan o'connor - anyall.org - github.com/brendano/cmdutils"""
 
 import hashlib,sys,optparse
 p = optparse.OptionParser()
@@ -17,8 +18,13 @@ if opts.k:
 
 if not opts.n:
   lines.sort(key=getter)
-for line in lines:
-  if opts.p:
-    line = getter(line) + "\t" + line
-  print line,
+
+try:
+  for line in lines:
+    if opts.p:
+      line = getter(line) + "\t" + line
+    print line,
+
+except IOError:
+  pass
 
