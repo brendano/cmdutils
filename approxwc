@@ -46,7 +46,7 @@ def iter_blocks():
         yield fp.read(size)
 
 def print_estimate():
-    #print "Num lines: {numlines:.1f} [{numlines_lo:.1f}, {numlines_hi:.1f}], Bytes per Line: {bpl_mean:.1f} (se {bpl_se:.1f})".format(**globals())
+    # print "Num lines: {numlines:.1f} [{numlines_lo:.1f}, {numlines_hi:.1f}], Bytes per Line: {bpl_mean:.1f} (se {bpl_se:.1f})".format(**globals())
     #print "Num Lines: {numlines_sig:,.0f} ({err_potential_pct:.1f}% max error), Bytes per Line: {bpl_mean:,.1f} (sd {bpl_sd:.1f}, se {bpl_se:.1f})".format(numlines_sig=smart_round(numlines, args.tolerance), err_potential_pct=err_potential*100, **globals())
     if args.wc:
         print "{numlines:12.1f}\tNA\t{filesize:12}\t{filename}".format(**globals())
@@ -103,12 +103,17 @@ grand_bytes_seen = 0
 grand_newlines_seen = 0
 
 # err_potential_pct = 0
+err_potential = 0
 
 for filename in args.filenames:
 
     filesize = os.stat(filename).st_size
     bufsize = int(args.blocksize)
-    fp = open(filename, 'r', bufsize)
+    try:
+        fp = open(filename, 'r', bufsize)
+    except IOError as e:
+        print e
+        continue
     start_time = time.time()
 
     bytes_seen = 0
