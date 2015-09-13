@@ -2,6 +2,8 @@
 
 # comma-ifies numbers
 # in arbitrary text.  for example, "hadoop dfs -ls".
+#
+# TODO python 2.7 {,} format command obsoletes this. should switch.
 
 def commify(n)
     # http://codesnippets.joyent.com/posts/show/330
