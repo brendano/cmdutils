@@ -14,7 +14,7 @@ Can give this script arguments which are passed to du.  Has not been tested
 with all arguments.
 """
 from __future__ import division
-import sys,subprocess,re,itertools
+import sys,subprocess,re,itertools,os
 args = sys.argv[1:]
 
 if '-b' in args:
@@ -29,8 +29,15 @@ if not any(x.startswith("-") for x in args):
 
 popen = lambda myargs: subprocess.Popen(myargs, stdout=subprocess.PIPE, bufsize=1)
 
-apparent_sizes = popen(["du", "--apparent-size", "--block-size=1",] + args).stdout
-disk_usage     = popen(["du", "--block-size=1",] + args).stdout
+DU_CMD = "du"
+if 'darwin' in sys.platform:
+    if os.system("which gdu >/dev/null 2>&1")==0:
+        DU_CMD = "gdu"
+    else:
+        assert False, "OSX du won't work. please get GNU du installed as 'gdu', e.g. from brew install coreutils."
+
+apparent_sizes = popen([DU_CMD, "--apparent-size", "--block-size=1",] + args).stdout
+disk_usage     = popen([DU_CMD, "--block-size=1",] + args).stdout
 
 def getnum(s):
     if isinstance(s, (int,float)): return s
@@ -56,6 +63,7 @@ for apparent,disk in itertools.izip(apparent_sizes,disk_usage):
         fmt ="{:{w},}\t{:{w},}\t{}\t (ratio {:.2f})"
     else:
         fmt = "{:{w}}\t{:{w}}\t{}\t (ratio {:.2f})"
-    print fmt.format(dsize,asize,name1, getnum(asize)/getnum(dsize), w=minpad)
+    ratio = getnum(asize)/getnum(dsize) if getnum(dsize)>0 else -1
+    print fmt.format(dsize,asize,name1, ratio, w=minpad)
     sys.stdout.flush()
 
