@@ -24,7 +24,7 @@ big_file = sys.stdin if big_file=='-' else open(big_file)
 
 filter = set( line.rstrip('\n').split('\t')[0] for line in filter_file )
 for line in big_file:
-  parts = line.split('\t')
+  parts = line.rstrip('\n').split('\t')
   docid = parts[0]
   if docid in filter:
     sys.stdout.write(line)
