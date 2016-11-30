@@ -80,6 +80,8 @@ def smart_round(n, tol):
         1%   => 2 sigdig
         2%   => 2 sigdig
     """
+    if tol<=0: return 2
+    if n <= 0: return 1
     sigdig = math.ceil(-math.log10(tol)) + 1
     sigdig = max(sigdig, 2)
     extra = math.ceil(math.log10(n)) - sigdig
