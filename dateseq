@@ -20,6 +20,8 @@ Underspecified StartDate uses the left-most day of the range.
 Underspecified EndDate uses the right-most day of the range.
 If EndDate is missing, use StartDate.  This only makes sense for underspecified
 datetimes (I think), you get the sequence over that year or month.
+
+See dateseq() function for python access
 """
 
 import sys, re
@@ -53,6 +55,27 @@ def parse_datetime(s, mode):
 
   else: assert False, "couldn't parse %s" % repr(s)
 
+def dateseq(start_date, end_date=None):
+    """Generate a sequence of datetime objects for each day in the specified
+    date interval.
+
+    start_date can be a datetime or a string.
+    If it's a string, it's one of the formats specified in this module's docstring;
+    either a specific day, or a year or month underspecification.
+    end_date is the same thing; it can be omitted.
+    """
+    end_date = end_date or start_date
+    if not isinstance(start_date, datetime):
+        start_date = parse_datetime(start_date, 'LEFT')
+    if not isinstance(end_date, datetime):
+        end_date = parse_datetime(end_date, 'RIGHT')
+    #print>>sys.stderr, start_date, end_date
+    assert start_date <= end_date
+    d = start_date
+    while d <= end_date:
+        yield d
+        d = d + timedelta(days=1)
+
 if '--test' in sys.argv:
     tests = """
     dateseq 2009
@@ -82,16 +105,5 @@ args = p.parse_args()
 start_date = args.start_date
 end_date = args.end_date or start_date
 
-start_date = parse_datetime(start_date, 'LEFT')
-end_date = parse_datetime(end_date, 'RIGHT')
-
-#print>>sys.stderr, start_date, end_date
-
-assert start_date <= end_date
-
-d = start_date
-while d <= end_date:
-  print d.strftime(args.format)
-  d = d + timedelta(days=1)
-
-
+for d in dateseq(start_date, end_date):
+    print d.strftime(args.format)
