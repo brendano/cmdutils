@@ -89,34 +89,35 @@ def dateseq(start_date, end_date=None):
         yield d
         d = d + timedelta(days=1)
 
-if '--test' in sys.argv:
-    tests = """
-    dateseq 2009
-    dateseq 200911 200912
-    dateseq 2009-01 2009-02
-    dateseq 2009-01-05 2009-01-05
-    dateseq 2009-01
-    dateseq 2008-12 2009-01
-    """
-    import os
-    lines = tests.strip().split("\n")
-    for cmd in lines:
-        print "\n***", cmd
-        os.system(cmd + " | summary")
-    sys.exit()
+if __name__=='__main__':
+    if '--test' in sys.argv:
+        tests = """
+        dateseq 2009
+        dateseq 200911 200912
+        dateseq 2009-01 2009-02
+        dateseq 2009-01-05 2009-01-05
+        dateseq 2009-01
+        dateseq 2008-12 2009-01
+        """
+        import os
+        lines = tests.strip().split("\n")
+        for cmd in lines:
+            print "\n***", cmd
+            os.system(cmd + " | summary")
+        sys.exit()
 
-import argparse
-class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
-    pass
-p = argparse.ArgumentParser(description=__doc__.strip(), formatter_class=CustomFormatter)
-p.add_argument("start_date")
-p.add_argument("end_date",nargs='?')
-p.add_argument("--test",action='store_true')
-p.add_argument("--format", default="%Y-%m-%d", help="strftime formatting of output")
-args = p.parse_args()
+    import argparse
+    class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+        pass
+    p = argparse.ArgumentParser(description=__doc__.strip(), formatter_class=CustomFormatter)
+    p.add_argument("start_date")
+    p.add_argument("end_date",nargs='?')
+    p.add_argument("--test",action='store_true')
+    p.add_argument("--format", default="%Y-%m-%d", help="strftime formatting of output")
+    args = p.parse_args()
 
-start_date = args.start_date
-end_date = args.end_date or start_date
+    start_date = args.start_date
+    end_date = args.end_date
 
-for d in dateseq(start_date, end_date):
-    print d.strftime(args.format)
+    for d in dateseq(start_date, end_date):
+        print d.strftime(args.format)
