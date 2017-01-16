@@ -25,35 +25,6 @@ datetimes (I think), you get the sequence over that year or month.
 import sys, re
 from datetime import datetime, timedelta
 
-if '--test' in sys.argv:
-    tests = """
-    dateseq 2009
-    dateseq 200911 200912
-    dateseq 2009-01 2009-02
-    dateseq 2009-01-05 2009-01-05
-    dateseq 2009-01
-    dateseq 2008-12 2009-01
-    """
-    import os
-    lines = tests.strip().split("\n")
-    for cmd in lines:
-        print "\n***", cmd
-        os.system(cmd + " | summary")
-    sys.exit()
-
-import argparse
-class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
-    pass
-p = argparse.ArgumentParser(description=__doc__.strip(), formatter_class=CustomFormatter)
-p.add_argument("start_date")
-p.add_argument("end_date",nargs='?')
-p.add_argument("--test",action='store_true')
-p.add_argument("--format", default="%Y-%m-%d", help="strftime formatting of output")
-args = p.parse_args()
-
-start_date = args.start_date
-end_date = args.end_date or start_date
-
 def parse_datetime(s, mode):
   if re.search(r'^\d\d\d\d-\d\d-\d\d$', s):
     return datetime.strptime(s,'%Y-%m-%d')
@@ -82,6 +53,34 @@ def parse_datetime(s, mode):
 
   else: assert False, "couldn't parse %s" % repr(s)
 
+if '--test' in sys.argv:
+    tests = """
+    dateseq 2009
+    dateseq 200911 200912
+    dateseq 2009-01 2009-02
+    dateseq 2009-01-05 2009-01-05
+    dateseq 2009-01
+    dateseq 2008-12 2009-01
+    """
+    import os
+    lines = tests.strip().split("\n")
+    for cmd in lines:
+        print "\n***", cmd
+        os.system(cmd + " | summary")
+    sys.exit()
+
+import argparse
+class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+    pass
+p = argparse.ArgumentParser(description=__doc__.strip(), formatter_class=CustomFormatter)
+p.add_argument("start_date")
+p.add_argument("end_date",nargs='?')
+p.add_argument("--test",action='store_true')
+p.add_argument("--format", default="%Y-%m-%d", help="strftime formatting of output")
+args = p.parse_args()
+
+start_date = args.start_date
+end_date = args.end_date or start_date
 
 start_date = parse_datetime(start_date, 'LEFT')
 end_date = parse_datetime(end_date, 'RIGHT')
