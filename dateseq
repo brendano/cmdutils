@@ -25,9 +25,22 @@ See dateseq() function for python access
 """
 
 import sys, re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 def parse_datetime(s, mode):
+  """mode should be LEFT or RIGHT whether to use the left side or right side of
+  a date interval range if an interval range specification is given."""
+  if isinstance(s, (datetime,date)):
+    return s
+  if isinstance(s, int):
+    s = str(s)
+    return parse_datetime(s, mode)
+  if isinstance(s, float):
+    s = int(round(s))
+    return parse_datetime(s, mode)
+  if not isinstance(s, (str,unicode)):
+    raise TypeError("Can't parse candidate datetime of type %s" % type(s))
+
   if re.search(r'^\d\d\d\d-\d\d-\d\d$', s):
     return datetime.strptime(s,'%Y-%m-%d')
   elif re.search('^\d{8}$', s):
