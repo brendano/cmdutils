@@ -15,7 +15,7 @@ def commify(n)
 end
 
 for line in STDIN
-  s = line.gsub(/([0-9\.]+)/){ 
+  s = line.gsub(/(?!_)([0-9\.]+)(?!_)/){ 
     # lhs = $1
     # strnum = $2
     # rhs = $3
