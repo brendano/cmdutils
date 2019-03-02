@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 r"""
 Summary statistics for a list of numbers or strings (on stdin).

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # http://philzimmermann.com/docs/human-oriented-base-32-encoding.txt
 # https://pypi.python.org/pypi/zbase32/
 import os,sys

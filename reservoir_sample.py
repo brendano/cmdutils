@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 #
 # The reservoir sampling algorithm outputs a sample of N lines from a
 # file of undetermined size. It does so in a single pass, using memory

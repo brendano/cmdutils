@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 """
 Variant of "ls -l" that only shows size, date, and name, and comma-ifies the sizes.

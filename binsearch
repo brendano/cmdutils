@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 """
 Assume a plaintext, uncompressed file's lines are in sorted order
   sorted by raw bytes! no locale-specific ordering or anything
