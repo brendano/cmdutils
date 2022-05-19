@@ -35,14 +35,34 @@ l () {
 
 import sys,re,os
 PY27 = sys.version_info >= (2,7)
+# 202205: giving up on py3 compat right now
 
 use_color = '--color=none' not in sys.argv
+
+
+def fix_stdio():
+  sys.stdout = IOWrapper(sys.stdout)
+
+class IOWrapper:
+  # I like to press Ctrl-C; why is Python yelling at me?
+  def __init__(self, fp):
+    self.fp = fp
+  def write(self,*a,**k):
+    try:
+      self.fp.write(*a,**k)
+    except IOError, e:
+      if e.errno == 32:  # broken pipe
+        sys.exit(0)
+      raise e
+
+fix_stdio()
 
 p = os.popen("env {envcolor}CLICOLOR_FORCE=1 ls {coloropts} -l {args}".format(
   envcolor='CLICOLOR_FORCE=1' if use_color else '',
   coloropts='' if not use_color else
             '-G' if 'darwin' in sys.platform else '--color=always',
   args=' '.join('"%s"' % x for x in sys.argv[1:])))
+
 
 data = p.read()
 lines = data.strip().split("\n")
