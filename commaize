@@ -15,13 +15,13 @@ def commify(n)
 end
 
 for line in STDIN
-  s = line.gsub(/(^|\s)([0-9\.]+)(\s|^)/){ 
-    lhs = $1
-    strnum = $2
-    rhs = $3
-    lhs + commify(strnum) + rhs
-    # strnum = $1
-    # commify(strnum)
+  s = line.gsub(/(?!_)([0-9\.]+)(?!_)/){ 
+    # lhs = $1
+    # strnum = $2
+    # rhs = $3
+    # lhs + commify(strnum) + rhs
+    strnum = $1
+    commify(strnum)
   }
   puts s
 end

@@ -3,14 +3,24 @@
 r"""
 Summary statistics for a list of numbers or strings (on stdin).
 Loosely inspired by R's summary(): call on anything, learn something.
-  * Number, number of types
-  * Type counts -- if small number of types
-    -c:  force showing counts
+  * Number, number of types (unique values)
+  * Value counts -- if small number of unique values
+    -c:  force showing these counts
   * Quantiles -- even for strings
   * Mean,SD -- only for numbers
 
 
-EXAMPLE
+EXAMPLE 1: numbers
+% cat /d/yelp/academic_download20150715/by_type/review.json | jq '.stars' | summary
+
+N = 330071      5 unique values Sum = 1207163
+Counts  [1:26383 2:34101 3:61577 4:112203 5:95807]
+Min   :  1
+    25:  3
+Median:  4      Mean: 3.657  SD: 1.221  SE: 0.002126
+    75:  5
+Max   :  5
+
 % perl -ne 'print "$1\n" if /"num_junk":(\d+)/' all.simple_counts | summary
 
 N = 816                 31 unique values
@@ -19,6 +29,17 @@ Min   :  1
 Median:  11     Mean: 11.36  SD: 7.485  SE: 0.262
     75:  17
 Max   :  31
+
+EXAMPLE 2: words
+% cat /usr/share/dict/words | summary
+
+N = 235886      No duplicates   
+Min   :  A
+    25:  colometric
+Median:  lenity
+    75:  ruddily
+Max   :  zythum
+
 """
 
 from __future__ import division
@@ -35,8 +56,9 @@ def writeln(s):
 def write(s):
   sys.stdout.write(s)
 
-def mean(xs):
-  return sum(xs)*1.0 / len(xs)
+def mean(xs, _sum=None):
+  if _sum is None: _sum = sum(xs)
+  return _sum*1.0 / len(xs)
 def sd(xs, m):
   ss = sum( (x-m)**2 for x in xs )
   return math.sqrt(ss / len(xs))
@@ -47,6 +69,7 @@ all_int = True
 # should use heapq instead of the sort?
 items = []
 counts = defaultdict(int)
+_sum = 0
 
 for line in sys.stdin:
   x = line[:-1]
@@ -57,6 +80,7 @@ for line in sys.stdin:
         all_int = False
       else:
         x = int(x)
+      _sum += x
     except ValueError: 
       all_float = False
       all_int = False
@@ -66,21 +90,20 @@ for line in sys.stdin:
 items.sort()
 N = len(items)
 
-print "N = %d" % N,
-print "\t\t",
+write("N = %d" % N)
 num_dups = len(items) - len(counts)
 if num_dups==0:
-  print "No duplicates"
+  write("\t\tNo duplicates")
 elif num_dups == len(items):
-  print "All duplicates"
+  write("\t\tAll duplicates")
 else:
-  print "%d unique values" % (len(counts))
+  write("\t\t%d unique values" % (len(counts)))
+if all_float or all_int:
+  write("\t\tSum = %s" % _sum)
+write("\n")
 
 if N==0:
   sys.exit()
-
-if N <= 3:
-  for x in items: writeln(x)
 
 if (len(counts) <= 10 and num_dups > 0) or '-c' in sys.argv:
   s = ' '.join(['%s:%d' % (w,counts[w]) for w in sorted(counts)])

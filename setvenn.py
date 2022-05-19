@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 """setvenn [opts] <set1> <set2>
 Venn diagram overview of two files as sets.  
 Show interesting counts and Jaccard ratio.

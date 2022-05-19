@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # Put input records into bucketed files, by their hash
 import sys, hashlib, struct, os
 from optparse import OptionParser

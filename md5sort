@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # vim:sts=2:sw=2
 """ sorts lines (or tab-sep records) by md5, a quasi-random shuffle.
 optionally prepends with the md5 id too. 

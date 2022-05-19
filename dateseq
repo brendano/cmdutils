@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 """
 Prints sequence of YYYY-MM-DD dates over the specified range.
 (Like `seq' or `gseq' but for dates.)
@@ -20,41 +20,27 @@ Underspecified StartDate uses the left-most day of the range.
 Underspecified EndDate uses the right-most day of the range.
 If EndDate is missing, use StartDate.  This only makes sense for underspecified
 datetimes (I think), you get the sequence over that year or month.
+
+See dateseq() function for python access
 """
 
 import sys, re
-from datetime import datetime, timedelta
-
-if '--test' in sys.argv:
-    tests = """
-    dateseq 2009
-    dateseq 200911 200912
-    dateseq 2009-01 2009-02
-    dateseq 2009-01-05 2009-01-05
-    dateseq 2009-01
-    dateseq 2008-12 2009-01
-    """
-    import os
-    lines = tests.strip().split("\n")
-    for cmd in lines:
-        print "\n***", cmd
-        os.system(cmd + " | summary")
-    sys.exit()
-
-import argparse
-class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
-    pass
-p = argparse.ArgumentParser(description=__doc__.strip(), formatter_class=CustomFormatter)
-p.add_argument("start_date")
-p.add_argument("end_date",nargs='?')
-p.add_argument("--test",action='store_true')
-p.add_argument("--format", default="%Y-%m-%d", help="strftime formatting of output")
-args = p.parse_args()
-
-start_date = args.start_date
-end_date = args.end_date or start_date
+from datetime import datetime, timedelta, date
 
 def parse_datetime(s, mode):
+  """mode should be LEFT or RIGHT whether to use the left side or right side of
+  a date interval range if an interval range specification is given."""
+  if isinstance(s, (datetime,date)):
+    return s
+  if isinstance(s, int):
+    s = str(s)
+    return parse_datetime(s, mode)
+  if isinstance(s, float):
+    s = int(round(s))
+    return parse_datetime(s, mode)
+  if not isinstance(s, (str,unicode)):
+    raise TypeError("Can't parse candidate datetime of type %s" % type(s))
+
   if re.search(r'^\d\d\d\d-\d\d-\d\d$', s):
     return datetime.strptime(s,'%Y-%m-%d')
   elif re.search('^\d{8}$', s):
@@ -82,17 +68,56 @@ def parse_datetime(s, mode):
 
   else: assert False, "couldn't parse %s" % repr(s)
 
+def dateseq(start_date, end_date=None):
+    """Generate a sequence of datetime objects for each day in the specified
+    date interval.
 
-start_date = parse_datetime(start_date, 'LEFT')
-end_date = parse_datetime(end_date, 'RIGHT')
+    start_date can be a datetime or a string.
+    If it's a string, it's one of the formats specified in this module's docstring;
+    either a specific day, or a year or month underspecification.
+    end_date is the same thing; it can be omitted.
+    """
+    end_date = end_date or start_date
+    if not isinstance(start_date, datetime):
+        start_date = parse_datetime(start_date, 'LEFT')
+    if not isinstance(end_date, datetime):
+        end_date = parse_datetime(end_date, 'RIGHT')
+    #print>>sys.stderr, start_date, end_date
+    assert start_date <= end_date
+    d = start_date
+    while d <= end_date:
+        yield d
+        d = d + timedelta(days=1)
 
-#print>>sys.stderr, start_date, end_date
+if __name__=='__main__':
+    if '--test' in sys.argv:
+        tests = """
+        dateseq 2009
+        dateseq 200911 200912
+        dateseq 2009-01 2009-02
+        dateseq 2009-01-05 2009-01-05
+        dateseq 2009-01
+        dateseq 2008-12 2009-01
+        """
+        import os
+        lines = tests.strip().split("\n")
+        for cmd in lines:
+            print "\n***", cmd
+            os.system(cmd + " | summary")
+        sys.exit()
 
-assert start_date <= end_date
+    import argparse
+    class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+        pass
+    p = argparse.ArgumentParser(description=__doc__.strip(), formatter_class=CustomFormatter)
+    p.add_argument("start_date")
+    p.add_argument("end_date",nargs='?')
+    p.add_argument("--test",action='store_true')
+    p.add_argument("--format", default="%Y-%m-%d", help="strftime formatting of output")
+    args = p.parse_args()
 
-d = start_date
-while d <= end_date:
-  print d.strftime(args.format)
-  d = d + timedelta(days=1)
+    start_date = args.start_date
+    end_date = args.end_date
 
-
+    for d in dateseq(start_date, end_date):
+        print d.strftime(args.format)

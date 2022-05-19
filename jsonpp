@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 """Pretty-print JSON from stdin on stdout.
 Like 'python -mjson.tool', except can handle a series of JSON objects (one per line)."""
 

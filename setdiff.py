@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 """Set operations on files as lists.  Symlink as:
     setdiff [-c] <set1> <set2> - set difference
     setand  [-c] <set1> <set2> - set intersection

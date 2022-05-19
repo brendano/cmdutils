@@ -1,0 +1,20 @@
+#!/bin/sh
+# Count items via a hashtable.
+# Outputs in same format as "sort|uniq -c".  Compare:
+#  Better: O(n) time!  (instead of O(n log n) for sort)
+#  Worse: needs O(m) space.  (instead of virtually zero)
+# Where 'm' is number of unique items.
+#  Hopefully constant, fixed number of categories
+#  But maybe increasing in n as in word counts or other long-tail phenomena
+# Use -vk=2 to only count the 2nd column.  Or other awk options too.
+
+exec awk "$@" '
+BEGIN {
+  if(!k) k=0
+}
+{c[$k] += 1}
+END { 
+  for (x in c) { 
+    print c[x], x 
+  }
+}'
