@@ -18,6 +18,7 @@ p = argparse.ArgumentParser()
 p.add_argument('sample_size', type=float)
 p.add_argument('input_file', nargs='?')
 p.add_argument('--shuffle', action='store_true', help="Shuffle the final output (otherwise order is not totally random, esp if input file is small)")
+p.add_argument('--count', action='store_true', help="Display total count on stderr")
 args = p.parse_args()
 
 if args.input_file:
@@ -34,9 +35,9 @@ for i,line in enumerate(input):
     elif i >= N and random.random() < N/(i+1):
         replace = random.randint(0, len(sample)-1)
         sample[replace] = line
-
 if args.shuffle:
     random.shuffle(sample)
-
+if args.count:
+    print>>sys.stderr,"Input count: %s" % i
 for line in sample:
     sys.stdout.write(line)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # vim: sts=4:sw=4
 
 """
@@ -94,7 +94,7 @@ parser = argparse.ArgumentParser(description=__doc__.strip(), formatter_class=ar
 parser.add_argument('filenames', nargs='+')
 parser.add_argument('--time-limit', '-l', default=5, type=float, help="Limit wall-clock time per file, in seconds. LOW DEFAULT: 5")
 parser.add_argument('--tolerance', '-t', default=0.1, type=float, help="Relative error tolerance (default is low)")
-parser.add_argument('--blocksize', '-b', default=100e3, type=float, help="Block size in bytes (default: 100e3)")
+parser.add_argument('--blocksize', '-b', default=10e6, type=float, help="Block size in bytes (default: 10M)")
 parser.add_argument('--max-samples', default=100e3, type=float, help="Maximum number of samples (default: very high)")
 parser.add_argument('--min-samples', default=3, type=float, help="Minimum number of samples")
 parser.add_argument('--wc', action='store_true', help="Output format similar to 'wc'")
